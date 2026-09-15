@@ -1,0 +1,27 @@
+{
+  "name": "lahout-support-system",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @lahout/backend --filter @lahout/frontend dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "db:migrate": "pnpm --filter @lahout/backend db:migrate",
+    "db:seed:dev": "pnpm --filter @lahout/backend db:seed:dev",
+    "db:seed:access:dev": "pnpm --filter @lahout/backend db:seed:access:dev",
+    "start:backend": "pnpm --filter @lahout/backend start",
+    "start:frontend": "node --env-file=.env tests/preview.mjs",
+    "build:tools": "pnpm --filter @lahout/backend build:tools",
+    "test:login": "pnpm build:tools && node --env-file=.env scripts/run-regression.mjs login",
+    "test:access": "pnpm build:tools && node --env-file=.env scripts/run-regression.mjs access",
+    "test": "pnpm build:tools && node --env-file=.env scripts/run-regression.mjs all",
+    "test:install-browser": "playwright install chromium"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}

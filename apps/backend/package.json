@@ -1,0 +1,33 @@
+{
+  "name": "@lahout/backend",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "tsc -p tsconfig.build.json && node --env-file=../../.env dist/main.js",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node --env-file=../../.env dist/main.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "db:migrate": "tsc -p tsconfig.json --outDir .tools && node --env-file=../../.env .tools/scripts/migrate.js",
+    "db:seed:dev": "tsc -p tsconfig.json --outDir .tools && node --env-file=../../.env .tools/scripts/seed-dev.js",
+    "db:seed:access:dev": "tsc -p tsconfig.json --outDir .tools && node --env-file=../../.env .tools/scripts/seed-access-dev.js",
+    "build:tools": "tsc -p tsconfig.json --outDir .tools"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.0.0",
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^4.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/platform-fastify": "^11.0.0",
+    "argon2": "^0.41.1",
+    "pg": "^8.13.1",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "fastify": "5.11.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/pg": "^8.11.10",
+    "tsx": "^4.19.2",
+    "typescript": "^5.8.3"
+  }
+}
