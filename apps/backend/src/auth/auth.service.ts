@@ -37,7 +37,7 @@ export class AuthService {
     }
 
     const roles = await this.loadRoles(row.account_id);
-    if (!roles.some(r => r.roleCode === 'SUPREME_GUIDE' && r.scopeType === 'ORGANIZATION' && r.scopeId === null)) {
+    if (!roles.length) {
       throw new AppError(401, 'INVALID_CREDENTIALS', 'نام کاربری یا رمز عبور صحیح نیست.');
     }
     if (previousToken) await this.pool.query('UPDATE identity.auth_sessions SET revoked_at = now() WHERE token_hash = $1', [tokenHash(previousToken)]);

@@ -11,6 +11,8 @@ try {
         if ($LASTEXITCODE -ne 0) { throw 'Account seed failed.' }
         & pnpm.cmd db:seed:access:dev
         if ($LASTEXITCODE -ne 0) { throw 'Access request seed failed.' }
+        & pnpm.cmd db:seed:guide:dev
+        if ($LASTEXITCODE -ne 0) { throw 'Guide seed failed.' }
     } finally { Pop-Location }
 } finally {
     [Environment]::SetEnvironmentVariable('DEV_SEED_PASSWORD', $previousPassword, 'Process')

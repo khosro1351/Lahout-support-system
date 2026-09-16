@@ -19,7 +19,9 @@
     "test:login": "pnpm build:tools && node --env-file=.env scripts/run-regression.mjs login",
     "test:access": "pnpm build:tools && node --env-file=.env scripts/run-regression.mjs access",
     "test": "pnpm build:tools && node --env-file=.env scripts/run-regression.mjs all",
-    "test:install-browser": "playwright install chromium"
+    "test:install-browser": "playwright install chromium",
+    "db:seed:guide:dev": "pnpm --filter @lahout/backend db:seed:guide:dev",
+    "test:guide": "pnpm build:tools && node --env-file=.env scripts/run-regression.mjs guide"
   },
   "devDependencies": {
     "playwright": "1.62.1"

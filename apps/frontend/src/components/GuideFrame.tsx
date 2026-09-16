@@ -28,9 +28,9 @@ export function GuideFrame({ children }: { children: ReactNode }) {
     catch { setError('خروج انجام نشد. دوباره تلاش کنید.'); }
     finally { setBusy(false); }
   }
-  return <main className="home-layout">
+  return <main className="home-layout guide-theme">
     <header className="home-header">
-      <Link className="brand brand-link" to="/guide"><span className="brand-mark" aria-hidden="true">ل</span><span>همیاران لاهوت<small>سامانه مدیریت حمایت</small></span></Link>
+      <Link className="brand brand-link" to="/guide"><svg className="lotus-mark" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 9C19 24 21 38 32 48C43 38 45 24 32 9Z" fill="#68a5cf"/><path d="M12 20C10 39 18 49 32 51C31 35 24 25 12 20ZM52 20C54 39 46 49 32 51C33 35 40 25 52 20Z" fill="#397cae"/><path d="M3 34C8 50 19 57 32 54C20 42 11 36 3 34ZM61 34C56 50 45 57 32 54C44 42 53 36 61 34Z" fill="#84b8d7"/></svg><span>همیاران لاهوت<small>سامانه مدیریت حمایت</small></span></Link>
       <div className="header-actions"><span className="role-badge">راهبر عالی</span><button className="secondary" disabled={busy} onClick={leave}>{busy ? 'در حال خروج…' : 'خروج از حساب'}</button></div>
     </header>
     {error && <div className="error-banner frame-error" role="alert">{error} {!ready && <button className="secondary" onClick={() => setRetry(x => x + 1)}>تلاش دوباره</button>}</div>}

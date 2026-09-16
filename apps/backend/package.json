@@ -10,7 +10,8 @@
     "db:migrate": "tsc -p tsconfig.json --outDir .tools && node --env-file=../../.env .tools/scripts/migrate.js",
     "db:seed:dev": "tsc -p tsconfig.json --outDir .tools && node --env-file=../../.env .tools/scripts/seed-dev.js",
     "db:seed:access:dev": "tsc -p tsconfig.json --outDir .tools && node --env-file=../../.env .tools/scripts/seed-access-dev.js",
-    "build:tools": "tsc -p tsconfig.json --outDir .tools"
+    "build:tools": "tsc -p tsconfig.json --outDir .tools",
+    "db:seed:guide:dev": "tsc -p tsconfig.json --outDir .tools && node --env-file=../../.env .tools/scripts/seed-guide-dev.js"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.0",

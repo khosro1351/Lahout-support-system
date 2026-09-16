@@ -1,0 +1,331 @@
+{
+  "Login": {
+    "date": "2026-09-16T03:57:22.077Z",
+    "database": "Real PostgreSQL, isolated database removed after tests",
+    "results": [
+      {
+        "name": "Original PostgreSQL migrations apply and rerun safely",
+        "status": "PASS"
+      },
+      {
+        "name": "Aseman seed is idempotent and stores Argon2id only",
+        "status": "PASS"
+      },
+      {
+        "name": "Guide API rejects unauthenticated access",
+        "status": "PASS"
+      },
+      {
+        "name": "Malformed JSON and excessive request bodies return safe 4xx errors",
+        "status": "PASS"
+      },
+      {
+        "name": "Missing, wrong-type and oversized fields are rejected safely",
+        "status": "PASS"
+      },
+      {
+        "name": "Unknown, wrong-password, suspended and roleless accounts share safe errors",
+        "status": "PASS"
+      },
+      {
+        "name": "Aseman login accepts case and outer whitespace and routes to guide",
+        "status": "PASS"
+      },
+      {
+        "name": "Opaque HttpOnly/Strict cookie, hashed server token, expiry and no-store",
+        "status": "PASS"
+      },
+      {
+        "name": "Session restores identity and authorizes guide endpoint",
+        "status": "PASS"
+      },
+      {
+        "name": "Re-login rotates token and revokes previous session",
+        "status": "PASS"
+      },
+      {
+        "name": "Missing or incorrect CSRF cannot log out a session",
+        "status": "PASS"
+      },
+      {
+        "name": "Cross-origin login is rejected",
+        "status": "PASS"
+      },
+      {
+        "name": "Logout revokes database session and clears cookie",
+        "status": "PASS"
+      },
+      {
+        "name": "Registered mobile works with Latin, Persian, Arabic and +98 input",
+        "status": "PASS"
+      },
+      {
+        "name": "Expired session is rejected",
+        "status": "PASS"
+      },
+      {
+        "name": "Role revocation is enforced by server on existing session",
+        "status": "PASS"
+      },
+      {
+        "name": "Disabled account loses existing session access",
+        "status": "PASS"
+      },
+      {
+        "name": "Deferred family API is inactive",
+        "status": "PASS"
+      },
+      {
+        "name": "Login rate limit blocks excess attempts",
+        "status": "PASS"
+      },
+      {
+        "name": "Production configuration issues Secure cookie",
+        "status": "PASS"
+      },
+      {
+        "name": "Production refuses insecure cookie configuration",
+        "status": "PASS"
+      },
+      {
+        "name": "Browser direct access redirects to blank Persian RTL login",
+        "status": "PASS"
+      },
+      {
+        "name": "Browser empty-field validation",
+        "status": "PASS"
+      },
+      {
+        "name": "Password visibility toggle, Enter submit and safe failure",
+        "status": "PASS"
+      },
+      {
+        "name": "Browser Aseman login reaches authorized guide home with inaccessible cookie",
+        "status": "PASS"
+      },
+      {
+        "name": "Browser refresh preserves session",
+        "status": "PASS"
+      },
+      {
+        "name": "Browser logout prevents re-entry",
+        "status": "PASS"
+      },
+      {
+        "name": "Mobile 390px layout has no horizontal overflow",
+        "status": "PASS"
+      },
+      {
+        "name": "Expired browser session returns to login",
+        "status": "PASS"
+      },
+      {
+        "name": "Network failure is safe and submit recovers",
+        "status": "PASS"
+      },
+      {
+        "name": "No browser JavaScript exceptions",
+        "status": "PASS"
+      }
+    ]
+  },
+  "Access Requests": {
+    "date": "2026-09-16T03:57:53.556Z",
+    "database": "Isolated real PostgreSQL database, removed after test",
+    "results": [
+      {
+        "name": "Migration and idempotent Development/Test seed create exactly three pending requests",
+        "status": "PASS"
+      },
+      {
+        "name": "Development access seed refuses production",
+        "status": "PASS"
+      },
+      {
+        "name": "Guide list returns all required request information",
+        "status": "PASS"
+      },
+      {
+        "name": "Anonymous and authenticated non-SUPREME_GUIDE users cannot read or decide",
+        "status": "PASS"
+      },
+      {
+        "name": "Decision endpoint preserves CSRF and Origin protection",
+        "status": "PASS"
+      },
+      {
+        "name": "Server blocks empty rejection reason, invalid types, decisions and IDs",
+        "status": "PASS"
+      },
+      {
+        "name": "Browser Aseman login reaches RTL guide home with seven active guide domains",
+        "status": "PASS"
+      },
+      {
+        "name": "Browser lists the three Development/Test requests with details",
+        "status": "PASS"
+      },
+      {
+        "name": "Browser approval persists after refresh and final request has no decision buttons",
+        "status": "PASS"
+      },
+      {
+        "name": "Approved history stores the guide identity, timestamp and decision in PostgreSQL",
+        "status": "PASS"
+      },
+      {
+        "name": "Server rejects both approve and reject on an already decided request",
+        "status": "PASS"
+      },
+      {
+        "name": "Browser blocks rejection without a reason and leaves the request pending",
+        "status": "PASS"
+      },
+      {
+        "name": "Browser rejection reason and immutable rejected status persist after refresh",
+        "status": "PASS"
+      },
+      {
+        "name": "Audit records both decisions and the rejection reason with the correct actor",
+        "status": "PASS"
+      },
+      {
+        "name": "Concurrent decisions produce exactly one final state, history and audit",
+        "status": "PASS"
+      },
+      {
+        "name": "PostgreSQL blocks direct final-status edits and history update/delete",
+        "status": "PASS"
+      },
+      {
+        "name": "Rerunning development seed does not reset final decisions",
+        "status": "PASS"
+      },
+      {
+        "name": "Approvals and rejections do not create accounts or change role assignments",
+        "status": "PASS"
+      },
+      {
+        "name": "Audit failure rolls back both status and decision history atomically",
+        "status": "PASS"
+      },
+      {
+        "name": "Browser status filter shows the selected decision state",
+        "status": "PASS"
+      },
+      {
+        "name": "Guide home and request list have no horizontal overflow at mobile width",
+        "status": "PASS"
+      },
+      {
+        "name": "Browser flow completes without JavaScript exceptions",
+        "status": "PASS"
+      }
+    ]
+  },
+  "Guide Workspace": {
+    "date": "2026-09-16T04:00:09.767Z",
+    "results": [
+      {
+        "name": "Five PostgreSQL migrations, repeatable guide seed and production seed refusal",
+        "status": "PASS"
+      },
+      {
+        "name": "Recipient login uses existing secure sessions and cannot access guide endpoints",
+        "status": "PASS"
+      },
+      {
+        "name": "People search, active-account filter and current multi-role data",
+        "status": "PASS"
+      },
+      {
+        "name": "Role assignment activates immediately in existing session; authorization, CSRF and duplicates enforced",
+        "status": "PASS"
+      },
+      {
+        "name": "Role change ends only previous same-scope assignment; multi-role combinations and history preserved",
+        "status": "PASS"
+      },
+      {
+        "name": "PostgreSQL and API prevent concurrent supreme guides",
+        "status": "PASS"
+      },
+      {
+        "name": "Group leader change atomically updates old/new scopes, permissions, history and organizational notification",
+        "status": "PASS"
+      },
+      {
+        "name": "Concurrent group-leader decisions leave exactly one current group leader",
+        "status": "PASS"
+      },
+      {
+        "name": "Dissolution preserves families/history and blocks new group appointments",
+        "status": "PASS"
+      },
+      {
+        "name": "Audit insertion failure rolls back role mutation and automatic consequences",
+        "status": "PASS"
+      },
+      {
+        "name": "Overdue automation is idempotent and confidential items/alerts do not leak to unrelated recipients",
+        "status": "PASS"
+      },
+      {
+        "name": "Read receipt records actor/time once; only recipient result closes overdue alert; repeat completion rejected",
+        "status": "PASS"
+      },
+      {
+        "name": "Multi-recipient completion waits for all results",
+        "status": "PASS"
+      },
+      {
+        "name": "Coordination from a non-guide is informational, visible to guide and has no approval workflow",
+        "status": "PASS"
+      },
+      {
+        "name": "Council reconsider/approve/cancel/replace preserves versions and explicit supersedes linkage",
+        "status": "PASS"
+      },
+      {
+        "name": "PostgreSQL blocks hard deletion and history/audit tampering",
+        "status": "PASS"
+      },
+      {
+        "name": "Composable report filters and sponsor whitelist exclude personal and confidential fields",
+        "status": "PASS"
+      },
+      {
+        "name": "Linked follow-up mission closes original urgent alert only after its recorded result",
+        "status": "PASS"
+      },
+      {
+        "name": "Role/group/organization audience resolution and private notification ownership",
+        "status": "PASS"
+      },
+      {
+        "name": "Invalid audience, report dates and entity IDs fail safely",
+        "status": "PASS"
+      },
+      {
+        "name": "Browser purple RTL dashboard, person drill-down and persisted role assignment",
+        "status": "PASS"
+      },
+      {
+        "name": "Browser group leader selection and transactional confirmation",
+        "status": "PASS"
+      },
+      {
+        "name": "Browser guide creates mission; recipient logs in, sees and completes; guide sees persisted result",
+        "status": "PASS"
+      },
+      {
+        "name": "Browser council reconsider/approve/cancel persists with history; sponsor preview",
+        "status": "PASS"
+      },
+      {
+        "name": "Responsive guide routes and no browser JavaScript exceptions",
+        "status": "PASS"
+      }
+    ]
+  }
+}

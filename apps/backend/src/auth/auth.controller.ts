@@ -32,7 +32,7 @@ export class AuthController {
       path: '/',
       maxAge: config.sessionTtlHours * 60 * 60,
     });
-    return { user, csrfToken: user.csrfToken, redirectTo: '/guide' };
+    return { user, csrfToken: user.csrfToken, redirectTo: user.roles.some(r => r.roleCode === 'SUPREME_GUIDE' && r.scopeType === 'ORGANIZATION') ? '/guide' : '/workspace' };
   }
 
   @Get('guide-home')

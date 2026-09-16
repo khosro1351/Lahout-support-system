@@ -102,11 +102,11 @@ try {
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto(origin + '/login'); await page.locator('#username').fill('Aseman'); await page.locator('#password').fill(password); await page.locator('#password').press('Enter');
   await page.waitForURL('**/guide'); await page.getByRole('heading', { name: 'صفحه اصلی راهبر عالی' }).waitFor();
-  assert.equal(await page.locator('.menu-card').count(), 6); assert.equal(await page.locator('.menu-card[aria-disabled=true]').count(), 5);
-  assert.equal(await page.locator('.menu-card a, a.menu-card').count(), 1);
+  assert.equal(await page.locator('.menu-card').count(), 7); assert.equal(await page.locator('.menu-card[aria-disabled=true]').count(), 0);
+  assert.equal(await page.locator('.menu-card a, a.menu-card').count(), 7);
   assert.equal(await page.locator('html').getAttribute('dir'), 'rtl');
   await page.screenshot({ path: path.join(out, 'guide-home.png'), fullPage: true });
-  pass('Browser Aseman login reaches RTL guide home with one active and five disabled menus');
+  pass('Browser Aseman login reaches RTL guide home with seven active guide domains');
   await page.locator('a.active-menu').click(); await page.getByRole('heading', { name: 'درخواست‌های دسترسی', exact: true }).waitFor();
   await page.locator('.request-row').first().waitFor(); assert.equal(await page.locator('.request-row').count(), 3); assert.equal(await page.locator('.dev-badge').count(), 3);
   await page.screenshot({ path: path.join(out, 'access-requests.png'), fullPage: true });

@@ -1,3 +1,4 @@
+import { GuidanceModule } from './guidance/guidance.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './database/database.module';
@@ -14,6 +15,7 @@ import { AccessRequestsModule } from './access-requests/access-requests.module';
     AuthModule,
     HealthModule,
     AccessRequestsModule,
+    GuidanceModule,
   ],
 })
 export class AppModule {}

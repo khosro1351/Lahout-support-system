@@ -20,6 +20,9 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionEnvelopeFilter());
 
   const fastify = app.getHttpAdapter().getInstance();
+  fastify.addHook('onRoute', (route: any) => {
+    if (route.url.startsWith('/api/v1/guide/') || route.url.startsWith('/api/v1/workspace/')) route.bodyLimit = 65536;
+  });
   fastify.addHook('onRequest', async (request: any, reply: any) => {
     request.requestId = getOrCreateRequestId(request.headers['x-request-id']);
     reply.header('x-request-id', request.requestId);
