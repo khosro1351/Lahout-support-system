@@ -1,3 +1,5 @@
+> گزارش تاریخی نسخه 1f2fdee؛ مرجع تحویل فعلی GUIDE_REVIEW_DELIVERY_FA.md است.
+
 # Supreme Guide workspace — implementation notes
 
 Baseline: `28b364a425cd0a5403a80f5ef33e6e1078c35db7`. The user explicitly authorized the additional scope in SUPREME_GUIDE_SPEC_FA.md. Historical scope-freeze reports describe previous milestones; they do not imply these newly requested domains must remain disabled.

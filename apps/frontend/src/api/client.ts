@@ -34,3 +34,8 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   }
   return data as T;
 }
+
+export async function apiFile(path:string,body:unknown):Promise<Blob>{
+ const response=await fetch(`${API_BASE}${path}`,{method:'POST',credentials:'include',headers:{'content-type':'application/json','x-csrf-token':csrfToken},body:JSON.stringify(body)});
+ if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data?.error?.message??'خروجی ساخته نشد.');}return response.blob();
+}

@@ -61,7 +61,7 @@ try {
   // A valid session for a non-guide account is a test fixture, not a new login workflow.
   const person = await pool.query("INSERT INTO identity.people(first_name,last_name) VALUES ('آزمایشی','فاقد مجوز') RETURNING id");
   const helper = await pool.query("INSERT INTO identity.accounts(person_id,username,password_hash) SELECT $1,'access_test_helper',password_hash FROM identity.accounts WHERE username='Aseman' RETURNING id", [person.rows[0].id]);
-  await pool.query("INSERT INTO identity.role_assignments(account_id,role_code,scope_type) VALUES ($1,'HELPER','ORGANIZATION')", [helper.rows[0].id]);
+  await pool.query("INSERT INTO identity.role_assignments(account_id,role_code,scope_type) VALUES ($1,'COUNCIL_MEMBER','ORGANIZATION')", [helper.rows[0].id]);
   const raw = randomBytes(32).toString('base64url');
   const helperCsrf = randomBytes(24).toString('hex');
   await pool.query("INSERT INTO identity.auth_sessions(account_id,token_hash,csrf_token,expires_at) VALUES ($1,$2,$3,now()+interval '1 hour')", [helper.rows[0].id, createHash('sha256').update(raw).digest('hex'), helperCsrf]);
@@ -102,11 +102,11 @@ try {
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto(origin + '/login'); await page.locator('#username').fill('Aseman'); await page.locator('#password').fill(password); await page.locator('#password').press('Enter');
   await page.waitForURL('**/guide'); await page.getByRole('heading', { name: 'صفحه اصلی راهبر عالی' }).waitFor();
-  assert.equal(await page.locator('.menu-card').count(), 7); assert.equal(await page.locator('.menu-card[aria-disabled=true]').count(), 0);
-  assert.equal(await page.locator('.menu-card a, a.menu-card').count(), 7);
+  assert.equal(await page.locator('.menu-card').count(), 6); assert.equal(await page.locator('.menu-card[aria-disabled=true]').count(), 0);
+  assert.equal(await page.locator('.menu-card a, a.menu-card').count(), 6);
   assert.equal(await page.locator('html').getAttribute('dir'), 'rtl');
   await page.screenshot({ path: path.join(out, 'guide-home.png'), fullPage: true });
-  pass('Browser Aseman login reaches RTL guide home with seven active guide domains');
+  pass('Browser Aseman login reaches RTL guide home with six active guide domains');
   await page.locator('a.active-menu').click(); await page.getByRole('heading', { name: 'درخواست‌های دسترسی', exact: true }).waitFor();
   await page.locator('.request-row').first().waitFor(); assert.equal(await page.locator('.request-row').count(), 3); assert.equal(await page.locator('.dev-badge').count(), 3);
   await page.screenshot({ path: path.join(out, 'access-requests.png'), fullPage: true });

@@ -27,9 +27,9 @@ export class GuidanceController {
  @Post('people/:id/end-role') @HttpCode(200) @UseGuards(CsrfGuard) end(@Param('id') id:string,@Body() b:unknown,@Req() r:AuthenticatedRequest){return this.s.endRole(id,b,r.user);}
  @Post('groups') @HttpCode(200) @UseGuards(CsrfGuard) create(@Body() b:unknown,@Req() r:AuthenticatedRequest){return this.s.createGroup(b,r.user);}
  @Post('groups/:id/leader') @HttpCode(200) @UseGuards(CsrfGuard) leader(@Param('id') id:string,@Body() b:unknown,@Req() r:AuthenticatedRequest){return this.s.changeLeader(id,b,r.user);}
- @Post('groups/:id/dissolve') @HttpCode(200) @UseGuards(CsrfGuard) dissolve(@Param('id') id:string,@Body() b:unknown,@Req() r:AuthenticatedRequest){return this.s.dissolve(id,b,r.user);}
- @Post('items') @HttpCode(200) @UseGuards(CsrfGuard) item(@Body() b:unknown,@Req() r:AuthenticatedRequest){return this.s.createItem(b,r.user);}
- @Post('items/:id/action') @HttpCode(200) @UseGuards(CsrfGuard) action(@Param('id') id:string,@Body() b:unknown,@Req() r:AuthenticatedRequest){return this.s.action(id,b,r.user);}
+ @Post('groups/:id/dissolve') @HttpCode(200) @UseGuards(CsrfGuard) dissolve(@Param('id') id:string,@Body() b:unknown,@Req() r:AuthenticatedRequest){throw new AppError(410,'RETIRED','از انتقال خانواده‌ها و غیرفعال‌سازی گروه استفاده کنید.');}
+ @Post('items') @HttpCode(200) @UseGuards(CsrfGuard) item(@Body() b:unknown,@Req() r:AuthenticatedRequest){throw new AppError(410,'RETIRED','ثبت دستور و مأموریت راهبر جایگزین مجوزهای موردی شده است.');}
+ @Post('items/:id/action') @HttpCode(200) @UseGuards(CsrfGuard) action(@Param('id') id:string,@Body() b:unknown,@Req() r:AuthenticatedRequest){throw new AppError(410,'RETIRED','اقدام مصوبه فقط از مسیر توقف اجرا یا بازنگری مجاز است.');}
  @Post('reports/sponsor') @HttpCode(200) @UseGuards(CsrfGuard) sponsor(@Body() b:unknown,@Req() r:AuthenticatedRequest){return this.s.sponsor(b,r.user);}
 }
 @Controller('workspace')
@@ -40,9 +40,9 @@ export class RecipientController {
  @Get('items/:id') detail(@Param('id') id:string,@Req() r:AuthenticatedRequest){return this.s.detail(id,r.user);}
  @Post('items/:id/seen') @HttpCode(200) @UseGuards(CsrfGuard) seen(@Param('id') id:string,@Req() r:AuthenticatedRequest){return this.s.seen(id,r.user);}
  @Post('items/:id/complete') @HttpCode(200) @UseGuards(CsrfGuard) complete(@Param('id') id:string,@Body() b:unknown,@Req() r:AuthenticatedRequest){return this.s.complete(id,b,r.user);}
- @Post('coordination') @HttpCode(200) @UseGuards(CsrfGuard) coordination(@Body() b:unknown,@Req() r:AuthenticatedRequest){return this.s.createItem(b,r.user,true);}
+ @Post('coordination') @HttpCode(200) @UseGuards(CsrfGuard) coordination(@Body() b:unknown,@Req() r:AuthenticatedRequest){throw new AppError(410,'RETIRED','درخواست مجوز موردی توسط مدیر اجرایی ثبت می‌شود.');}
  @Get('notifications') notifications(@Req() r:AuthenticatedRequest){return this.s.notifications(r.user);}
  @Post('notifications/:id/seen') @HttpCode(200) @UseGuards(CsrfGuard) notification(@Param('id') id:string,@Req() r:AuthenticatedRequest){return this.s.notificationSeen(id,r.user);}
 }
-@Module({imports:[AuthModule],controllers:[GuidanceController,RecipientController],providers:[GuidanceService]})
+@Module({imports:[AuthModule],controllers:[GuidanceController,RecipientController],providers:[GuidanceService],exports:[GuidanceService]})
 export class GuidanceModule{}
