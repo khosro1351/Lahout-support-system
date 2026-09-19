@@ -1,3 +1,4 @@
+import {finalGuideSeed} from './seed-guide-final';
 import {Pool} from 'pg';
 import argon2 from 'argon2';
 import {createHash} from 'node:crypto';
@@ -7,7 +8,7 @@ async function main(){
  if(process.env.APP_ENV!=='development'||!process.env.DATABASE_URL||!process.env.DEV_SEED_PASSWORD)throw new Error('Explicit development environment and local seed password required');
  const pool=new Pool({connectionString:process.env.DATABASE_URL}),c=await pool.connect();
  try{await c.query('BEGIN');await c.query('SELECT pg_advisory_xact_lock(1405,5)');
- if((await c.query("SELECT 1 FROM monitoring.seed_batches WHERE key='guide-review-v1'")).rowCount){await c.query('COMMIT');console.log('Review development seed already exists; current data preserved.');return;}
+ if((await c.query("SELECT 1 FROM monitoring.seed_batches WHERE key='guide-review-v1'")).rowCount){await finalGuideSeed(c);await c.query('COMMIT');console.log('Review development seed already exists; current data preserved.');return;}
  const guide=(await c.query("SELECT id FROM identity.accounts WHERE username='Aseman'")).rows[0];if(!guide)throw new Error('Seed Aseman first');
  const hash=await argon2.hash(process.env.DEV_SEED_PASSWORD,{type:argon2.argon2id});
  async function account(key:string,first:string,index:number){const person=uuid('person-'+key),account=uuid('account-'+key);await c.query("INSERT INTO identity.people(id,first_name,last_name,mobile,national_id) VALUES($1,$2,'آزمایشی Development/Test',$3,$4)",[person,first,'TEST-PHONE-'+index,'TEST-ID-'+index]);await c.query('INSERT INTO identity.accounts(id,person_id,username,password_hash) VALUES($1,$2,$3,$4)',[account,person,key,hash]);return {person,account};}
@@ -36,7 +37,7 @@ async function main(){
  for(const [type,severity] of [['ALERT','RED'],['REMINDER','AMBER'],['MESSAGE','INFO']]){const item=(await c.query("INSERT INTO guidance.items(kind,subject,body,created_by,audience_type,person_id,note_type,confidential) VALUES('NOTE',$1,'سوابق آزمایشی شخص',$2,'GUIDE',$3,$4,true) RETURNING id",['مورد '+type+' آزمایشی',leaders[0].account,leaders[0].person,type])).rows[0];await c.query('INSERT INTO guidance.recipients(item_id,account_id) VALUES($1,$2)',[item.id,guide.id]);if(type!=='MESSAGE')await c.query("INSERT INTO guidance.alerts(item_id,category,severity) VALUES($1,'IMPORTANT',$2)",[item.id,severity]);}
  const item=(await c.query("INSERT INTO guidance.items(kind,subject,body,created_by,audience_type,execution_status) VALUES('COUNCIL','مصوبه آزمایشی بازبینی','متن مصوبه؛ فقط توقف اجرا یا درخواست بازنگری مجاز است.',$1,'GUIDE','RUNNING') RETURNING id",[council.account])).rows[0];await c.query('INSERT INTO guidance.recipients(item_id,account_id) VALUES($1,$2)',[item.id,guide.id]);await c.query("INSERT INTO guidance.attachments(item_id,name,media_type,content) VALUES($1,'پیوست آزمایشی.txt','text/plain; charset=utf-8',$2)",[item.id,Buffer.from('پیوست آزمایشی شورا')]);
  const plan=uuid('plan-school');await c.query("INSERT INTO monitoring.distribution_plans(id,title,category,capacity,unit_value,source,planned_on,provenance) VALUES($1,'طرح آزمایشی لوازم تحصیلی','لوازم تحصیلی',9,1500000,'حامی آزمایشی',current_date,$2)",[plan,provenance]);for(let k=0;k<familyIds.length;k++)await c.query('INSERT INTO monitoring.distribution_recipients(plan_id,family_id,status) VALUES($1,$2,$3)',[plan,familyIds[k],['FINAL','ELIGIBLE','RESERVE','NON_DELIVERY','REPLACEMENT','TARGET'][k%6]]);
- await c.query("INSERT INTO monitoring.seed_batches(key) VALUES('guide-review-v1')");await c.query('COMMIT');console.log('Review Development/Test seed: 3 groups, 3 leaders, 6 helpers, 9 families, 3 council members. Existing data never reset.');
+ await c.query("INSERT INTO monitoring.seed_batches(key) VALUES('guide-review-v1')");await finalGuideSeed(c);await c.query('COMMIT');console.log('Review Development/Test seed: 3 groups, 3 leaders, 6 helpers, 9 families, 3 council members. Existing data never reset.');
  }catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();await pool.end();}
 }
 main().catch(e=>{console.error('Review seed failed:',e instanceof Error?e.message:'unknown');process.exitCode=1;});

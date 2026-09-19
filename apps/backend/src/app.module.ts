@@ -1,3 +1,4 @@
+import {OversightModule} from './oversight/oversight.module';
 import { ReviewModule } from './review/review.module';
 import { GuidanceModule } from './guidance/guidance.module';
 import { Module } from '@nestjs/common';
@@ -18,6 +19,7 @@ import { AccessRequestsModule } from './access-requests/access-requests.module';
     AccessRequestsModule,
     GuidanceModule,
     ReviewModule,
+    OversightModule,
   ],
 })
 export class AppModule {}
