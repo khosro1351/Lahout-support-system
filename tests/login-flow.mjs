@@ -1,3 +1,4 @@
+import {dropTestDatabase} from './database-cleanup.mjs';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
@@ -72,4 +73,4 @@ try{
  await page.route('**/api/v1/auth/login',route=>route.abort());await page.locator('#username').fill('Aseman');await page.locator('#password').fill(password);await page.locator('#password').press('Enter');await page.getByRole('alert').waitFor();assert.match(await page.getByRole('alert').innerText(),/ارتباط/);assert.equal(await page.getByRole('button',{name:'ورود به سامانه'}).isEnabled(),true);pass('Network failure is safe and submit recovers');
  assert.deepEqual(pageErrors,[]);pass('No browser JavaScript exceptions');
 }catch(e){results.push({name:'Failure',status:'FAIL',error:e.message});console.error(e);process.exitCode=1;}
-finally{if(browser)await browser.close();if(front)front.kill();await stop();await pool.end();await admin.query(`DROP DATABASE ${dbName} WITH (FORCE)`);await admin.end();writeFileSync(path.join(out,'results.json'),JSON.stringify({date:new Date().toISOString(),database:'Real PostgreSQL, isolated database removed after tests',results},null,2));}
+finally{if(browser)await browser.close();if(front)front.kill();await stop();await pool.end();await dropTestDatabase(admin, dbName);await admin.end();writeFileSync(path.join(out,'results.json'),JSON.stringify({date:new Date().toISOString(),database:'Real PostgreSQL, isolated database removed after tests',results},null,2));}

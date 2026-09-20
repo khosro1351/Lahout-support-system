@@ -1,3 +1,4 @@
+import {dropTestDatabase} from './database-cleanup.mjs';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
@@ -127,4 +128,4 @@ try {
  pass('Desktop, tablet and mobile: login, people, groups, family workspace, read-only/editable assessments, reports and access requests');
  writeFileSync(path.join(out,'results.json'),JSON.stringify({date:new Date().toISOString(),results},null,2));
 } catch(error){if(browser){for(const c of browser.contexts())for(const p of c.pages()){console.log('Browser failure URL',p.url());console.log((await p.locator('body').innerText()).slice(0,4000));await p.screenshot({path:path.join(out,'failure.png'),fullPage:true}).catch(()=>{});}}results.push({name:'suite',status:'FAIL',message:error.message});writeFileSync(path.join(out,'results.json'),JSON.stringify({results},null,2));throw error;}
-finally{if(browser)await browser.close();await stop(front);await stop(server);await pool.end();await admin.query(`DROP DATABASE ${dbName} WITH (FORCE)`);await admin.end();}
+finally{if(browser)await browser.close();await stop(front);await stop(server);await pool.end();await dropTestDatabase(admin, dbName);await admin.end();}

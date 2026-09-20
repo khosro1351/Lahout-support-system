@@ -28,3 +28,5 @@ render.yaml، .github/workflows/validate.yml، scripts/start-staging.mjs، scrip
 تاریخچه main همگام شده و Merge دو تاریخچه دیگر لازم نیست. CI آنلاین باید پس از انتشار در GitHub بررسی شود. اتصال Render و ایجاد منابع فقط پس از تأیید هزینه آینده انجام می‌شود.
 URL Staging/Login، PostgreSQL آنلاین، Migration آنلاین و حساب آنلاین هنوز ایجاد نشده‌اند. HTTPS عمومی و دستگاه واقعی با Wi-Fi/اینترنت موبایل تست نشده‌اند؛ آزمون فعلی روی Windows و viewport مرورگر بوده است. نتیجه Linux CI را باید در Actions همان Commit مشاهده کرد.
 Username آینده Staging برابر Aseman و رمز فقط از STAGING_GUIDE_PASSWORD در Secret سرویس خواهد بود؛ رمز داخل Git نیست. این آماده‌سازی، تحویل محیط آنلاین محسوب نمی‌شود.
+
+اصلاح CI: پس از موفقیت تست‌های ورود و دسترسی، پاک‌سازی Linux با اتصال در حال بسته‌شدن تداخل داشت. اکنون پس از بستن Pool، خروج اتصال‌ها از pg_stat_activity کنترل و پایگاه آزمایشی بدون FORCE حذف می‌شود. نام غیرآزمایشی در این مسیر رد می‌شود. Business Rule یا Migration تغییر نکرده است.

@@ -1,3 +1,4 @@
+import {dropTestDatabase} from './database-cleanup.mjs';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
@@ -180,6 +181,6 @@ try {
   results.push({ name: 'Failure', status: 'FAIL', error: e.message }); console.error(e); process.exitCode = 1;
 } finally {
   if (browser) await browser.close(); await stop(front); await stop(server); await pool.end();
-  await admin.query(`DROP DATABASE ${dbName} WITH (FORCE)`); await admin.end();
+  await dropTestDatabase(admin, dbName); await admin.end();
   writeFileSync(path.join(out, 'results.json'), JSON.stringify({ date: new Date().toISOString(), database: 'Isolated real PostgreSQL database, removed after test', results }, null, 2));
 }

@@ -1,6 +1,6 @@
 {
   "login": {
-    "date": "2026-09-20T03:28:15.705Z",
+    "date": "2026-09-20T03:38:02.896Z",
     "database": "Real PostgreSQL, isolated database removed after tests",
     "results": [
       {
@@ -130,7 +130,7 @@
     ]
   },
   "access": {
-    "date": "2026-09-20T03:28:41.179Z",
+    "date": "2026-09-20T03:38:30.960Z",
     "database": "Isolated real PostgreSQL database, removed after test",
     "results": [
       {
@@ -224,7 +224,7 @@
     ]
   },
   "guide": {
-    "date": "2026-09-20T03:29:39.797Z",
+    "date": "2026-09-20T03:39:33.444Z",
     "results": [
       {
         "name": "Eight additive migrations, repeatable Persian development fixtures and nine versioned assessments",
@@ -305,7 +305,7 @@
     ]
   },
   "staging": {
-    "date": "2026-09-20T03:30:00.360Z",
+    "date": "2026-09-20T03:39:57.328Z",
     "results": [
       {
         "name": "Staging preparation rejects production and non-staging databases",

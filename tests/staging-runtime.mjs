@@ -1,3 +1,4 @@
+import {dropTestDatabase} from './database-cleanup.mjs';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
@@ -17,6 +18,7 @@ const out=path.join(root,'test-results/staging');mkdirSync(out,{recursive:true})
 const results=[];const pass=name=>{results.push({name,status:'PASS'});console.log('PASS '+name);};let child;await admin.query('CREATE DATABASE '+db);const pool=new Pool({connectionString:url.href});
 try {
  const prepare=extra=>spawnSync(process.execPath,['scripts/prepare-staging.mjs'],{cwd:root,env:{...env,...extra},encoding:'utf8',windowsHide:true});
+ await assert.rejects(dropTestDatabase(admin,'lahout_local'),/non-test database/);
  assert.notEqual(prepare({APP_ENV:'production'}).status,0);assert.notEqual(prepare({DATABASE_URL:adminUrl}).status,0);pass('Staging preparation rejects production and non-staging databases');
  assert.equal(prepare({}).status,0);const before=(await pool.query("SELECT password_hash FROM identity.accounts WHERE username='Aseman'")).rows[0].password_hash;
  assert.equal(prepare({STAGING_GUIDE_PASSWORD:randomBytes(32).toString('base64url')}).status,0);assert.equal((await pool.query("SELECT password_hash FROM identity.accounts WHERE username='Aseman'")).rows[0].password_hash,before);assert.equal((await pool.query('SELECT count(*)::int n FROM core.schema_migrations')).rows[0].n,8);pass('Dedicated staging database: eight migrations, synthetic seed, repeat preserves account password');
@@ -27,4 +29,4 @@ try {
  for(const route of ['/.env','/assets/missing.js','/api/v1/not-real','/package.json'])assert.equal((await fetch(base+route)).status,404);pass('Single-origin compiled UI, deep links and assets work; private files and unknown APIs remain unavailable');
  const login=await fetch(base+'/api/v1/auth/login',{method:'POST',headers:{origin:env.FRONTEND_ORIGIN,'content-type':'application/json'},body:JSON.stringify({username:'Aseman',password:secret})});assert.equal(login.status,200);assert.match(login.headers.get('set-cookie'),/Secure/);assert.match(login.headers.get('set-cookie'),/HttpOnly/);assert.equal((await login.json()).redirectTo,'/guide');pass('Staging-only guide login uses secure session cookie and role routing');
 } catch(e){results.push({name:'suite',status:'FAIL',message:e.message});throw e;}
-finally{if(child&&child.exitCode===null){child.kill();await new Promise(r=>child.once('exit',r));}await pool.end();await admin.query('DROP DATABASE '+db+' WITH (FORCE)');await admin.end();writeFileSync(path.join(out,'results.json'),JSON.stringify({date:new Date().toISOString(),results},null,2));}
+finally{if(child&&child.exitCode===null){child.kill();await new Promise(r=>child.once('exit',r));}await pool.end();await dropTestDatabase(admin, db);await admin.end();writeFileSync(path.join(out,'results.json'),JSON.stringify({date:new Date().toISOString(),results},null,2));}
