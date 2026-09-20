@@ -16,7 +16,7 @@ export function loadConfig(): AppConfig {
 
   const ttl = Number(process.env.SESSION_TTL_HOURS ?? 12);
   if (!Number.isFinite(ttl) || ttl <= 0 || ttl > 24) throw new Error('Invalid session lifetime');
-  if (process.env.APP_ENV === 'production' && (process.env.COOKIE_SECURE !== 'true' || !process.env.FRONTEND_ORIGIN!.startsWith('https://'))) throw new Error('Production requires HTTPS and secure cookies');
+  if (['production', 'staging'].includes(process.env.APP_ENV ?? '') && (process.env.COOKIE_SECURE !== 'true' || !process.env.FRONTEND_ORIGIN!.startsWith('https://'))) throw new Error('Staging/production requires HTTPS and secure cookies');
   return {
     appEnv: process.env.APP_ENV ?? 'development',
     backendPort: Number(process.env.BACKEND_PORT ?? 3000),

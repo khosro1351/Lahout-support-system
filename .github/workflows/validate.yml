@@ -1,0 +1,51 @@
+name: Validate staging release
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main, staging]
+permissions:
+  contents: read
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: lahout_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      CI: 'true'
+      APP_ENV: development
+      VITE_APP_ENV: staging
+      DATABASE_URL: postgres://postgres@127.0.0.1:5432/lahout_ci
+      FRONTEND_ORIGIN: http://127.0.0.1:5174
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm build
+      - run: pnpm build:tools
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: PostgreSQL, browser and regression suites
+        run: node scripts/run-regression.mjs all
+      - name: Staging packaging integration
+        run: node tests/staging-runtime.mjs

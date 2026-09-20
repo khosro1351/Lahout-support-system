@@ -1,3 +1,4 @@
+import {registerStaticUi} from './common/static-ui';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
@@ -35,7 +36,9 @@ async function bootstrap() {
     }
   });
 
-  await app.listen(config.backendPort, '127.0.0.1');
+  if (process.env.STATIC_UI_DIR) registerStaticUi(fastify, process.env.STATIC_UI_DIR);
+  app.enableShutdownHooks();
+  await app.listen(config.backendPort, process.env.BACKEND_HOST ?? '127.0.0.1');
   console.log(JSON.stringify({ level: 'info', event: 'backend_started', port: config.backendPort }));
 }
 

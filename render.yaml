@@ -1,0 +1,43 @@
+# Proposed paid resources. Review the dashboard estimate and obtain owner approval before Apply.
+services:
+  - type: web
+    name: lahout-staging
+    runtime: node
+    region: frankfurt
+    plan: 0.5c-512mb
+    repo: https://github.com/khosro1351/Lahout-support-system
+    branch: staging
+    autoDeployTrigger: checksPass
+    buildCommand: npm install --global pnpm@11.19.0 && pnpm install --frozen-lockfile --prod=false && pnpm typecheck && pnpm build && pnpm build:tools
+    preDeployCommand: node scripts/prepare-staging.mjs
+    startCommand: node scripts/start-staging.mjs
+    healthCheckPath: /api/v1/health/ready
+    envVars:
+      - key: NODE_VERSION
+        value: 24.21.0
+      - key: APP_ENV
+        value: staging
+      - key: NODE_ENV
+        value: production
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: SESSION_TTL_HOURS
+        value: "12"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: lahout-staging-db
+          property: connectionString
+      - key: STAGING_SEED_ENABLED
+        value: "true"
+      - key: STAGING_GUIDE_PASSWORD
+        sync: false
+      - key: VITE_APP_ENV
+        value: staging
+databases:
+  - name: lahout-staging-db
+    databaseName: lahout_staging
+    region: frankfurt
+    plan: 0.1c-256mb
+    diskSizeGB: 1
+    postgresMajorVersion: "17"
+    ipAllowList: []
