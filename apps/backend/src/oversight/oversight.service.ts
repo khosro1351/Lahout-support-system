@@ -23,6 +23,27 @@ export class OversightService {
  if(q.group)rows=rows.filter(f=>f.group_id===q.group);if(q.level)rows=rows.filter(f=>f.current_level===q.level);if(q.urgency)rows=rows.filter(f=>f.current_urgency===q.urgency);if(q.q)rows=rows.filter(f=>(f.head_name+' '+f.family_code).includes(q.q));
  return rows.map(f=>({...f,domains:f.assessment_result?Object.fromEntries(Object.entries(f.assessment_result.domains).map(([key,d]:any)=>[key,{title:d.label,score:d.score,answers:(d.breakdown??[]).map((b:any)=>({question:b.label,response:b.selection,score:b.points,max_score:b.max})),research_data:'نتیجه نسخه ارزیابی '+f.revision}])):f.domains,score:f.current_score,need_level:f.current_level,urgency:f.current_urgency,open_alerts:f.alert_count,case_condition:f.assessment_state==='PROVISIONAL'||!f.assessment_id?'INCOMPLETE':f.research_status==='OVERDUE'?'OVERDUE':f.review_required?'REVIEW_REQUIRED':'CURRENT'}));
  }
+ async familyReadContext(familyId:string,u:AuthUser){
+ const data=await this.family(familyId,u);
+ const contexts=(await this.pool.query(`SELECT c.*,i.subject AS council_subject FROM family.investigation_context c JOIN family.research_records r ON r.id=c.research_id LEFT JOIN guidance.items i ON i.id=c.council_item_id AND i.kind='COUNCIL' AND i.archive_final WHERE r.family_id=$1`,[familyId])).rows;
+ const visits=(await this.pool.query(`SELECT v.* FROM family.investigation_visits v JOIN family.research_records r ON r.id=v.research_id WHERE r.family_id=$1 ORDER BY visited_at`,[familyId])).rows;
+ const notes=(await this.pool.query(`SELECT n.*,p.first_name||' '||p.last_name AS actor_name FROM family.case_notes n JOIN identity.accounts a ON a.id=n.actor_id JOIN identity.people p ON p.id=a.person_id WHERE n.family_id=$1 ORDER BY n.recorded_at DESC`,[familyId])).rows;
+ const documents=(await this.pool.query(`SELECT d.id,d.name,d.media_type,c.person_id,c.research_id,c.support_id,c.category,c.valid_until,c.recorded_at,p.first_name||' '||p.last_name AS actor_name FROM family.documents d LEFT JOIN family.document_context c ON c.document_id=d.id LEFT JOIN identity.accounts a ON a.id=c.actor_id LEFT JOIN identity.people p ON p.id=a.person_id WHERE d.family_id=$1`,[familyId])).rows;
+ const supportContexts=(await this.pool.query('SELECT c.* FROM family.support_context c JOIN monitoring.support_records s ON s.id=c.support_id WHERE s.family_id=$1',[familyId])).rows;
+ const continuous=(await this.pool.query('SELECT * FROM monitoring.stipend_facts WHERE family_id=$1',[familyId])).rows;
+ return {...data,family:{...data.family,assessment_status:data.snapshots[0]?.state==='PROVISIONAL'?'INCOMPLETE':!data.snapshots.some(s=>s.state==='FINAL')?'NO_VALID':data.family?.review_required?'REVIEW_REQUIRED':'CURRENT'},documents,notes,research:data.research.map((r:any)=>({...r,context:contexts.find(c=>c.research_id===r.id),visits:visits.filter(v=>v.research_id===r.id)})),supports:[...data.supports.map((r:any)=>({...r,...supportContexts.find(c=>c.support_id===r.id),support_kind:'OCCASIONAL'})),...continuous.map(r=>({...r,category:'حمایت مستمر',support_kind:'CONTINUOUS',amount:r.monthly_amount,status:r.ends_on&&new Date(r.ends_on)<new Date()?'COMPLETED':'ACTIVE',occurred_at:r.starts_on}))]};
+ }
+ async monitoringFamilies(){
+ const rows=await this.families();
+ const snapshots=(await this.pool.query("SELECT DISTINCT ON (family_id) family_id,id,score,level,urgency,result,created_at FROM assessment.snapshots WHERE state='FINAL' ORDER BY family_id,revision DESC")).rows;
+ const reminders=(await this.pool.query("SELECT family_id,count(*)::int AS count FROM oversight.reminders WHERE state='OPEN' AND due_at<now() GROUP BY family_id")).rows;
+ return {families:rows.filter(f=>f.case_status==='ACTIVE').map(f=>{
+ const valid=snapshots.find(s=>s.family_id===f.family_id);
+ return {...f,score:valid?.score??null,need_level:valid?.level??null,assessed_at:valid?.created_at??null,
+ domain_results:valid?.result?.domains??{},assessment_status:f.assessment_state==='PROVISIONAL'?'INCOMPLETE':!valid?'NO_VALID':f.review_required?'REVIEW_REQUIRED':'CURRENT',
+ overdue_reminders:reminders.find(r=>r.family_id===f.family_id)?.count??0};
+ })};
+ }
  async dashboard(u:AuthUser){const families=await this.families(),active=families.filter(f=>f.case_status==='ACTIVE'),alerts=(await this.assessment.alerts({},u)).alerts.filter(a=>a.state!=='RESOLVED'),groups=(await this.groups({},u)).groups;
  return {families:{active:active.length,levels:Object.fromEntries(['A','B','C','D'].map(l=>[l,active.filter(f=>f.need_level===l).length])),immediate:active.filter(f=>f.urgency==='IMMEDIATE').length,incomplete:active.filter(f=>f.case_condition==='INCOMPLETE').length},alerts:{critical:alerts.filter(a=>a.severity==='CRITICAL').length,veryImportant:alerts.filter(a=>a.severity==='VERY_IMPORTANT').length,escalated:alerts.filter(a=>a.escalated).length,open:alerts.length},groups:{active:groups.filter(g=>g.status==='ACTIVE').length,critical:groups.filter(g=>g.critical_families>0).length,overdue:groups.filter(g=>g.overdue_count>0).length}};
  }

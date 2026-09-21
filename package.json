@@ -24,7 +24,8 @@
     "test:guide": "pnpm build:tools && node --env-file=.env scripts/run-regression.mjs guide",
     "start:staging": "node scripts/start-staging.mjs",
     "prepare:staging": "node scripts/prepare-staging.mjs",
-    "test:staging": "node --env-file=.env tests/staging-runtime.mjs"
+    "test:staging": "node --env-file=.env tests/staging-runtime.mjs",
+    "db:seed:family-read:dev": "pnpm build:tools && node --env-file=.env apps/backend/.tools/scripts/seed-family-read-dev.js"
   },
   "devDependencies": {
     "playwright": "1.62.1"

@@ -4,7 +4,7 @@ import {api} from '../api/client';
 import {Screen,Field,useData,date} from './GuideWorkspace';
 import {translate,digits} from './vocabulary';
 type Row=Record<string,any>;
-function DataField({field,value,onChange,readOnly}:{field:Row,value:any,onChange:(v:any)=>void,readOnly:boolean}){
+export function DataField({field,value,onChange,readOnly}:{field:Row,value:any,onChange:(v:any)=>void,readOnly:boolean}){
  if(readOnly)return <div className="assessment-answer"><strong>{field.label}</strong><span>{value===undefined||value===''?'ثبت نشده':Array.isArray(value)?value.join('، ')||'موردی انتخاب نشده':typeof value==='boolean'?(value?'بله':'خیر'):String(value)}</span></div>;
  if(field.type==='multiple')return <fieldset><legend>{field.label}</legend><div className="field-picker">{field.options.map((option:string)=><label key={option}><input type="checkbox" checked={(value??[]).includes(option)} onChange={e=>onChange(e.target.checked?[...(value??[]),option]:(value??[]).filter((x:string)=>x!==option))}/>{option}</label>)}</div></fieldset>;
  if(field.type==='boolean'||field.type==='choice')return <Field label={field.label}><select value={value===undefined?'':String(value)} onChange={e=>onChange(field.type==='boolean'?(e.target.value===''?undefined:e.target.value==='true'):e.target.value)}><option value="">نامشخص / ثبت نشده</option>{field.type==='boolean'?<><option value="true">بله</option><option value="false">خیر</option></>:field.options.map((o:string)=><option key={o}>{o}</option>)}</select></Field>;

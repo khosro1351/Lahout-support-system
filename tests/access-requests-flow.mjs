@@ -103,8 +103,8 @@ try {
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto(origin + '/login'); await page.locator('#username').fill('Aseman'); await page.locator('#password').fill(password); await page.locator('#password').press('Enter');
   await page.waitForURL('**/guide'); await page.getByRole('heading', { name: 'صفحه اصلی راهبر عالی' }).waitFor();
-  assert.equal(await page.locator('.menu-card').count(), 4); assert.equal(await page.locator('.menu-card[aria-disabled=true]').count(), 0);
-  assert.equal(await page.locator('.menu-card a, a.menu-card').count(), 4);
+  assert.equal(await page.locator('.slice-module').count(), 4); assert.equal(await page.locator('.slice-module[aria-disabled=true]').count(), 0);
+  assert.equal(await page.locator('.slice-module a').count(), 4);
   assert.equal(await page.locator('html').getAttribute('dir'), 'rtl');
   await page.screenshot({ path: path.join(out, 'guide-home.png'), fullPage: true });
   pass('Browser Aseman login reaches RTL guide home with four supervisory domains; legacy access flow preserved outside navigation');
@@ -174,7 +174,7 @@ try {
   pass('Browser status filter shows the selected decision state');
   await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#status-filter').selectOption('ALL');
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)); await page.screenshot({ path: path.join(out, 'access-requests-mobile.png'), fullPage: true });
-  await page.goto(origin + '/guide'); await page.locator('.guide-menu').waitFor(); assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)); await page.screenshot({ path: path.join(out, 'guide-home-mobile.png'), fullPage: true });
+  await page.goto(origin + '/guide'); await page.locator('.slice-module').first().waitFor(); assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)); await page.screenshot({ path: path.join(out, 'guide-home-mobile.png'), fullPage: true });
   pass('Guide home and request list have no horizontal overflow at mobile width');
   assert.deepEqual(errors, []); pass('Browser flow completes without JavaScript exceptions');
 } catch (e) {

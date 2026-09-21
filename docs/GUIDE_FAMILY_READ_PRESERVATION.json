@@ -1,0 +1,42 @@
+{
+  "migration": "0009_family_read_context.sql",
+  "baselinePreserved": true,
+  "seedPreservesExistingRows": true,
+  "results": [
+    {
+      "table": "identity.access_requests",
+      "rows": 3,
+      "status": "PASS"
+    },
+    {
+      "table": "identity.access_request_decisions",
+      "rows": 3,
+      "status": "PASS"
+    },
+    {
+      "table": "family.families",
+      "rows": 9,
+      "status": "PASS"
+    },
+    {
+      "table": "family.family_memberships",
+      "rows": 27,
+      "status": "PASS"
+    },
+    {
+      "table": "assessment.snapshots",
+      "rows": 9,
+      "status": "PASS"
+    },
+    {
+      "table": "assessment.models",
+      "rows": 1,
+      "status": "PASS"
+    },
+    {
+      "table": "guidance.history",
+      "rows": 38,
+      "status": "PASS"
+    }
+  ]
+}

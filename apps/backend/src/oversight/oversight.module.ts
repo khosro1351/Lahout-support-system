@@ -11,6 +11,8 @@ import {AssessmentService} from './assessment.service';
 @Controller('oversight') @UseGuards(SessionGuard,GuideGuard)
 class OversightController {
  constructor(private s:OversightService,private a:AssessmentService){}
+ @Get('families/:id') family(@Param('id') id:string,@Req() r:AuthenticatedRequest){return this.s.familyReadContext(id,r.user);}
+ @Get('families') families(){return this.s.monitoringFamilies();}
  @Get('dashboard') dashboard(@Req() r:AuthenticatedRequest){return this.s.dashboard(r.user);}
  @Get('groups') groups(@Query() q:Record<string,string>,@Req() r:AuthenticatedRequest){return this.s.groups(q,r.user);}
  @Get('council') council(@Query() q:Record<string,string>){return this.s.council(q);}
