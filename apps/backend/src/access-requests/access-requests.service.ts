@@ -1,3 +1,4 @@
+import {recheckContext} from '../auth/role-context';
 import { Inject, Injectable } from '@nestjs/common';
 import { Pool } from 'pg';
 import { PG_POOL } from '../database/database.constants';
@@ -52,18 +53,14 @@ export class AccessRequestsService {
         throw new AppError(409, 'ALREADY_DECIDED', 'این درخواست قبلاً تصمیم‌گیری شده است و قابل تغییر نیست.');
       }
       // Recheck current role/account inside the transaction, not just in the UI.
-      const allowed = await client.query(`SELECT 1 FROM identity.role_assignments r
-        JOIN identity.accounts a ON a.id = r.account_id WHERE r.account_id = $1 AND a.status = 'ACTIVE'
-        AND r.role_code = 'SUPREME_GUIDE' AND r.scope_type = 'ORGANIZATION' AND r.scope_id IS NULL
-        AND r.valid_from <= now() AND (r.valid_to IS NULL OR r.valid_to > now())`, [user.accountId]);
-      if (!allowed.rowCount) throw new AppError(403, 'FORBIDDEN', 'دسترسی به این عملیات مجاز نیست.');
+      await recheckContext(client,user,true);
       const status = decision === 'APPROVED' ? 'APPROVED_PENDING_TECHNICAL_IMPLEMENTATION' : 'REJECTED';
       await client.query('UPDATE identity.access_requests SET status = $2 WHERE id = $1', [id, status]);
       const history = await client.query(`INSERT INTO identity.access_request_decisions(request_id,decided_by,decision,reason)
         VALUES ($1,$2,$3,$4) RETURNING id,decided_at`, [id, user.accountId, decision, decision === 'REJECTED' ? reason : null]);
-      await client.query(`INSERT INTO admin.audit_events(event_type,actor_account_id,entity_type,entity_id,metadata)
-        VALUES ('ACCESS_REQUEST_DECIDED',$1,'ACCESS_REQUEST',$2,$3::jsonb)`,
-        [user.accountId, id, JSON.stringify({ decision, status, reason: decision === 'REJECTED' ? reason : null, decisionId: history.rows[0].id })]);
+      await client.query(`INSERT INTO admin.audit_events(event_type,actor_account_id,entity_type,entity_id,metadata,effective_role,effective_scopes,simulation)
+        VALUES ('ACCESS_REQUEST_DECIDED',$1,'ACCESS_REQUEST',$2,$3::jsonb,$4,$5,$6)`,
+        [user.accountId, id, JSON.stringify({ decision, status, reason: decision === 'REJECTED' ? reason : null, decisionId: history.rows[0].id }),user.effectiveRole,JSON.stringify(user.roles),user.simulation]);
       await client.query('COMMIT');
       return { status, decision: history.rows[0] };
     } catch (error) {

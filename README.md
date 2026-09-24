@@ -202,7 +202,7 @@ pnpm.cmd test:guide
 apps/backend/src/          Backend کامل، شامل کدهای M0 حفظ‌شده
 apps/frontend/src/         Frontend کامل
 apps/backend/scripts/     migrate.ts / seed-dev.ts / seed-access-dev.ts
-migrations/               هشت Migration PostgreSQL به ترتیب
+migrations/               ده Migration PostgreSQL به ترتیب
 scripts/                  Seed تعاملی Windows و اجرای Regression
 tests/                    تست ورود، Access Requests و نمایش build
 .env.example              نمونه بدون Secret
@@ -211,8 +211,13 @@ docs/                     Business Rules و گزارش تثبیت
 .git/                     تاریخچه و Commit تحویلی در ZIP
 ```
 
-چهار حوزه راهبر: افراد، گروه‌ها و خانواده‌ها، آرشیو مصوبات، گزارش‌های مدیریتی. درخواست‌های دسترسی از ناوبری حذف شده‌اند اما مسیر مستقیم و تاریخچه سالم باقی است. گردش مجوز و مداخله در مصوبات بازنشسته شده‌اند. راهبر ارزیابی را ویرایش نمی‌کند و هشدار متعلق به سرگروه را حل نمی‌کند. حدود تکمیل و Deferred در docs/GUIDE_FINAL_DELIVERY_FA.md آمده است.
+چهار حوزه راهبر: افراد، گروه‌ها و خانواده‌ها، آرشیو مصوبات، گزارش‌های مدیریتی. درخواست‌های دسترسی از Sidebar همیار شاهد قابل دسترسی‌اند و تاریخچه حفظ شده است. گردش مجوز و مداخله در مصوبات بازنشسته شده‌اند. راهبر ارزیابی را ویرایش نمی‌کند و هشدار متعلق به سرگروه را حل نمی‌کند. حدود تکمیل و Deferred در docs/GUIDE_FINAL_DELIVERY_FA.md آمده است.
 
 فایل docker-compose.yml صرفاً گزینه توسعه جایگزین نصب PostgreSQL است و رمز را از متغیر محلی POSTGRES_PASSWORD می‌گیرد. مسیر اصلی و قابل بررسی این راهنما نصب مستقیم PostgreSQL است؛ Docker برای انتقال لازم نیست.
 
 گزارش‌های TEST_REPORT_FA.md و GUIDE_ACCESS_TEST_REPORT_FA.md مربوط به مراحل قبلی‌اند؛ روش فعلی راه‌اندازی و انتقال همین README است. نتیجه تثبیت در [گزارش انتقال](docs/PORTABILITY_VERIFICATION.md) ثبت می‌شود.
+
+
+## معماری چندنقشی (مرحله فعلی، محلی)
+
+عنوان نمایشی SUPREME_GUIDE اکنون «همیار شاهد» است. نقش‌های جدید، انتخاب نقش، پنل فنی، Seed توسعه، مسیرها و محدودیت‌ها در [گزارش معماری چندنقشی](docs/MULTI_ROLE_DELIVERY_FA.md) آمده است. تعداد Migrationها اکنون ۱۰ است. تست `pnpm.cmd test:roles` نیز به مجموعه کامل اضافه شده است. درخواست‌های دسترسی از Sidebar همیار شاهد در دسترس‌اند. هیچ Push یا Deploy جزو این مرحله نیست.

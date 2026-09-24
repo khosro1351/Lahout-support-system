@@ -11,9 +11,15 @@ export async function testFamilyReadSlice({page,origin,get,req,guide,leader,pool
  await assert.rejects(pool.query('INSERT INTO family.case_notes(family_id,person_id,body,actor_id) VALUES($1,$2,$3,$4)',[target.family_id,foreignPerson,'scope test',guide.user.accountId]),/Member context outside family/);
  assert.ok((await pool.query("SELECT 1 FROM guidance.history WHERE entity_id=$1 AND action='RESEARCH_CONTEXT_RECORDED'",[target.family_id])).rowCount);
  pass('Guide monitoring API protects role; immutable board snapshot, visits, notes and linked evidence remain separate from alerts');
- await page.goto(origin+'/guide');await page.locator('.slice-tile').first().waitFor();await page.getByRole('link',{name:/خانواده‌های تحت حمایت/}).click();await page.locator('tbody tr').first().waitFor();assert.ok(page.url().includes('/guide/families'));assert.equal(await page.getByLabel('حوزه گزارش').count(),0);
+ await page.goto(origin+'/guide');await page.locator('.slice-tile').first().waitFor();await page.locator('.slice-tile').filter({hasText:'خانواده‌های تحت حمایت'}).click();await page.locator('tbody tr').first().waitFor();assert.ok(page.url().includes('/guide/families'));assert.equal(await page.getByLabel('حوزه گزارش').count(),0);
  assert.equal(await page.locator('.slice-grid.five select').count(),5);const rows=await page.locator('tbody tr').count();assert.equal(rows,Math.min(20,index.families.length));const listUrl=page.url();await page.locator('tbody tr').first().locator('td').nth(1).click();assert.equal(page.url(),listUrl);
- for(const status of ['CURRENT','REVIEW_REQUIRED','INCOMPLETE','NO_VALID']){await page.getByLabel('وضعیت ارزیابی',{exact:true}).selectOption(status);assert.equal(await page.locator('tbody tr').count(),Math.min(20,index.families.filter(f=>f.assessment_status===status).length));}
+ for(const status of ['CURRENT','REVIEW_REQUIRED','INCOMPLETE','NO_VALID']){
+  await page.getByLabel('وضعیت ارزیابی',{exact:true}).selectOption(status);
+  const expected=Math.min(20,index.families.filter(f=>f.assessment_status===status).length);
+  // React/router rendering is asynchronous; retain the exact assertion after it settles.
+  await page.waitForFunction(({status,expected})=>new URL(location.href).searchParams.get('assessment')===status&&document.querySelectorAll('tbody tr').length===expected,{status,expected});
+  assert.equal(await page.locator('tbody tr').count(),expected);
+ }
  await page.getByLabel('وضعیت ارزیابی',{exact:true}).selectOption('');
  await page.route('**/api/v1/oversight/groups',route=>route.abort());await page.reload();await page.locator('tbody tr').first().waitFor();assert.ok(await page.getByRole('alert').count());await page.unroute('**/api/v1/oversight/groups');await page.getByRole('button',{name:'تلاش دوباره',exact:true}).click();await page.getByLabel('گروه',{exact:true}).locator('option').nth(1).waitFor({state:'attached'});
 

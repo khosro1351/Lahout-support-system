@@ -1,0 +1,13 @@
+{
+  "date": "2026-09-24T17:40:37.392Z",
+  "results": [
+    {
+      "name": "Local browser login Aseman",
+      "status": "PASS"
+    },
+    {
+      "name": "Local browser login TechSupportDev",
+      "status": "PASS"
+    }
+  ]
+}

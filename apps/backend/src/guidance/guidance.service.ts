@@ -1,3 +1,4 @@
+import {recheckContext} from '../auth/role-context';
 import { Inject, Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { Pool, PoolClient } from 'pg';
 import { randomUUID } from 'node:crypto';
@@ -37,14 +38,14 @@ export class GuidanceService implements OnModuleInit, OnModuleDestroy {
  async tx<T>(user:AuthUser|null, fn:(c:PoolClient)=>Promise<T>, guide=true):Promise<T> {
  const c=await this.pool.connect();
  try { await c.query('BEGIN'); await c.query("SELECT pg_advisory_xact_lock(1405,5)");
- if(user){const ok=await c.query(`SELECT 1 FROM identity.accounts a JOIN identity.role_assignments r ON r.account_id=a.id WHERE a.id=$1 AND a.status='ACTIVE' AND ${current} ${guide?"AND r.role_code='SUPREME_GUIDE' AND r.scope_type='ORGANIZATION' AND r.scope_id IS NULL":''}`, [user.accountId]); if(!ok.rowCount)throw new AppError(403,'FORBIDDEN','دسترسی به این عملیات مجاز نیست.');}
+ if(user)await recheckContext(c,user,guide);
  const result=await fn(c);await c.query('COMMIT');return result;
  }catch(e){await c.query('ROLLBACK'); const code=(e as {code?:string}).code; if(['23505','23P01','23503','23514'].includes(code??''))throw new AppError(409,'CONFLICT','این تغییر با وضعیت فعلی سازگار نیست. صفحه را تازه کنید.');throw e;}finally{c.release();}
  }
  async history(c:PoolClient,user:AuthUser|null,type:string,entity:string,action:string,previous:unknown,next:unknown,reason=''){
  const data={previous:previous??null,next:next??null,reason:reason||null};
- await c.query(`INSERT INTO guidance.history(entity_type,entity_id,actor_id,action,previous_state,new_state,reason) VALUES($1,$2,$3,$4,$5,$6,$7)`,[type,entity,user?.accountId??null,action,JSON.stringify(previous??null),JSON.stringify(next??null),reason||null]);
- await c.query(`INSERT INTO admin.audit_events(event_type,actor_account_id,entity_type,entity_id,metadata) VALUES($1,$2,$3,$4,$5)`,['GUIDE_'+action,user?.accountId??null,type,entity,JSON.stringify(data)]);
+ await c.query(`INSERT INTO guidance.history(entity_type,entity_id,actor_id,action,previous_state,new_state,reason,effective_role,effective_scopes,simulation) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,[type,entity,user?.accountId??null,action,JSON.stringify(previous??null),JSON.stringify(next??null),reason||null,user?.effectiveRole??null,JSON.stringify(user?.roles??[]),user?.simulation??false]);
+ await c.query(`INSERT INTO admin.audit_events(event_type,actor_account_id,entity_type,entity_id,metadata,effective_role,effective_scopes,simulation) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,['GUIDE_'+action,user?.accountId??null,type,entity,JSON.stringify(data),user?.effectiveRole??null,JSON.stringify(user?.roles??[]),user?.simulation??false]);
  }
  async notify(c:PoolClient,recipients:string[],message:string,category:string,key:string,item:string|null=null,visibility='PRIVATE'){
  for(const recipient of new Set(recipients))await c.query(`INSERT INTO guidance.notifications(recipient_id,item_id,category,message,visibility,dedupe_key) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(recipient_id,dedupe_key) DO NOTHING`,[recipient,item,category,message,visibility,key]);

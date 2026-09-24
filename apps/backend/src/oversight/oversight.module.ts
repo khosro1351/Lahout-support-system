@@ -34,5 +34,5 @@ class SharedController {
  @Post('families/:id/assessments') @HttpCode(200) @UseGuards(CsrfGuard) submit(@Param('id') id:string,@Body() b:unknown,@Req() r:AuthenticatedRequest){return this.a.submit(id,b,r.user);}
  @Post('models/:id/transition') @HttpCode(200) @UseGuards(CsrfGuard) transition(@Param('id') id:string,@Body() b:unknown,@Req() r:AuthenticatedRequest){return this.a.transition(id,b,r.user);}
 }
-@Module({imports:[AuthModule,GuidanceModule,ReviewModule],controllers:[OversightController,SharedController],providers:[OversightService,AssessmentService]})
+@Module({imports:[AuthModule,GuidanceModule,ReviewModule],controllers:[OversightController,SharedController],providers:[OversightService,AssessmentService],exports:[OversightService,AssessmentService]})
 export class OversightModule{}

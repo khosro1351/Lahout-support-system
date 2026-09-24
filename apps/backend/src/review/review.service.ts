@@ -1,3 +1,4 @@
+import {recheckContext} from '../auth/role-context';
 import { Inject, Injectable } from '@nestjs/common';
 import { Pool, PoolClient } from 'pg';
 import { randomUUID } from 'node:crypto';
@@ -15,7 +16,7 @@ export class ReviewService {
  private executive(u:AuthUser){if(!role(u,'EXECUTIVE_MANAGER'))throw new AppError(403,'FORBIDDEN','این اقدام فقط برای مدیر اجرایی مجاز است.');}
  private async executives(c:PoolClient){return(await c.query(`SELECT DISTINCT r.account_id FROM identity.role_assignments r JOIN identity.accounts a ON a.id=r.account_id WHERE r.role_code='EXECUTIVE_MANAGER' AND r.scope_type='ORGANIZATION' AND a.status='ACTIVE' AND ${active}`)).rows.map(r=>r.account_id);}
  private async currentContext(c:PoolClient,u:AuthUser,person:string|null,family:string|null,group:string|null){
- const roles=(await c.query(`SELECT r.* FROM identity.role_assignments r WHERE r.account_id=$1 AND ${active}`,[u.accountId])).rows;
+ const roles=(await recheckContext(c,u)).map(r=>({role_code:r.roleCode,scope_type:r.scopeType,scope_id:r.scopeId}));
  const guide=roles.some(r=>r.role_code==='SUPREME_GUIDE'&&r.scope_type==='ORGANIZATION');if(guide)return;
  if(person)throw new AppError(403,'FORBIDDEN','دسترسی مجاز نیست.');
  if(family){const f=(await c.query('SELECT current_group_id AS group_id FROM family.families WHERE id=$1 FOR SHARE',[family])).rows[0];if(!f)throw new AppError(404,'NOT_FOUND','پرونده پیدا نشد.');group=f.group_id;}

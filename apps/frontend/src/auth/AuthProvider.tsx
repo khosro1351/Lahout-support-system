@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { api, clearCsrfToken, setCsrfToken } from '../api/client';
 
 export type Role = { roleCode: string; scopeType: string; scopeId: string | null };
@@ -7,6 +8,10 @@ export type User = {
   displayName: string;
   username: string;
   roles: Role[];
+  availableRoles: Role[];
+  effectiveRole: string | null;
+  simulation: boolean;
+  redirectTo: string;
 };
 
 type AuthContextValue = {
@@ -14,6 +19,9 @@ type AuthContextValue = {
   loading: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  changeRole: (roleCode: string) => Promise<void>;
+  simulate: (roleCode: string, groupId?: string) => Promise<void>;
+  stopSimulation: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -46,6 +54,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(data.user);
       setCsrfToken(data.csrfToken);
     },
+    changeRole: async roleCode=>{const d=await api<{user:User}>('/auth/select-role',{method:'POST',body:JSON.stringify({roleCode})});flushSync(()=>setUser(d.user));},
+    simulate: async (roleCode,groupId)=>{const d=await api<{user:User}>('/auth/simulation',{method:'POST',body:JSON.stringify({roleCode,groupId})});flushSync(()=>setUser(d.user));},
+    stopSimulation: async ()=>{const d=await api<{user:User}>('/auth/simulation/stop',{method:'POST'});flushSync(()=>setUser(d.user));},
     logout: async () => {
       await api('/auth/logout', { method: 'POST' });
       clearCsrfToken();

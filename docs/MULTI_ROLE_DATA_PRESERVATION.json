@@ -1,0 +1,42 @@
+{
+  "checkedAt": "2026-09-24T17:36:25.768Z",
+  "status": "PASS",
+  "tables": {
+    "family.families": {
+      "count": 9,
+      "digest": "bb411420f7b74bf3ad12b2526012369e"
+    },
+    "family.family_memberships": {
+      "count": 27,
+      "digest": "e98286dc33923c8bba87699d5c0071f1"
+    },
+    "family.case_profiles": {
+      "count": 9,
+      "digest": "b1c1f41de683c225237f7e76befe88a6"
+    },
+    "family.documents": {
+      "count": 10,
+      "digest": "572539f91288893badca0fcd084f3485"
+    },
+    "family.research_records": {
+      "count": 18,
+      "digest": "b805c1c61daa05622964c7e489534de7"
+    },
+    "assessment.models": {
+      "count": 1,
+      "digest": "d42cdc56e9c70d32600ac318281f70ac"
+    },
+    "assessment.snapshots": {
+      "count": 9,
+      "digest": "e9930ba529c2de21979e6d33864b46e3"
+    },
+    "identity.access_requests": {
+      "count": 3,
+      "digest": "e722a0a758c17dfd71b7314699686304"
+    },
+    "identity.access_request_decisions": {
+      "count": 3,
+      "digest": "03a404cba64b2faf886b5486b6593071"
+    }
+  }
+}

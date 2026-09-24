@@ -10,6 +10,10 @@ export type AuthUser = {
   displayName: string;
   username: string;
   roles: RoleAssignment[];
+  availableRoles: RoleAssignment[];
+  effectiveRole: string | null;
+  simulation: boolean;
+  redirectTo: string;
   sessionId: string;
   csrfToken: string;
 };

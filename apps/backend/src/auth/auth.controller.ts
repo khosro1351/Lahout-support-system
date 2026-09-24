@@ -32,8 +32,15 @@ export class AuthController {
       path: '/',
       maxAge: config.sessionTtlHours * 60 * 60,
     });
-    return { user, csrfToken: user.csrfToken, redirectTo: user.roles.some(r => r.roleCode === 'SUPREME_GUIDE' && r.scopeType === 'ORGANIZATION') ? '/guide' : '/workspace' };
+    return { user, csrfToken: user.csrfToken, redirectTo: user.redirectTo };
   }
+
+  @Post('select-role') @HttpCode(200) @UseGuards(SessionGuard,CsrfGuard)
+  async selectRole(@Body() body:any,@Req() r:AuthenticatedRequest){return {user:await this.authService.selectRole(r.user,body)};}
+  @Post('simulation') @HttpCode(200) @UseGuards(SessionGuard,CsrfGuard)
+  async simulation(@Body() body:any,@Req() r:AuthenticatedRequest){return {user:await this.authService.simulate(r.user,body)};}
+  @Post('simulation/stop') @HttpCode(200) @UseGuards(SessionGuard,CsrfGuard)
+  async stopSimulation(@Req() r:AuthenticatedRequest){return {user:await this.authService.simulate(r.user,null,true)};}
 
   @Get('guide-home')
   @UseGuards(SessionGuard, GuideGuard)

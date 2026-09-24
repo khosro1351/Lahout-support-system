@@ -1,3 +1,4 @@
+import {RoleWorkspaceModule} from './auth/role-workspace.module';
 import {OversightModule} from './oversight/oversight.module';
 import { ReviewModule } from './review/review.module';
 import { GuidanceModule } from './guidance/guidance.module';
@@ -20,6 +21,7 @@ import { AccessRequestsModule } from './access-requests/access-requests.module';
     GuidanceModule,
     ReviewModule,
     OversightModule,
+    RoleWorkspaceModule,
   ],
 })
 export class AppModule {}

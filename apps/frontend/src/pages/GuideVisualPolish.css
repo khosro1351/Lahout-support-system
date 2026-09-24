@@ -1,0 +1,163 @@
+/* Presentation only: these opt-in scopes deliberately exclude other guide routes. */
+.guide-theme:has(:is(.guide-dashboard-polish,.guide-monitor-polish)) {
+  background:radial-gradient(ellipse at 0 30%,#f4f0ff88,transparent 38%),radial-gradient(ellipse at 100% 90%,#f0efff77,transparent 30%),#fcfcff;
+  padding:14px 30px 0;
+}
+.guide-theme:has(:is(.guide-dashboard-polish,.guide-monitor-polish)) .home-header {
+  background:linear-gradient(115deg,#512d91 0%,#422578 65%,#3e2377 100%);
+  border:1px solid #6339a8;border-radius:13px;box-shadow:0 5px 18px #492a7c12;padding:20px 28px;
+}
+.guide-theme:has(:is(.guide-dashboard-polish,.guide-monitor-polish)) .page-heading h1 {
+  font-size:clamp(1.5rem,2.2vw,2.1rem);font-weight:800;letter-spacing:-.65px;color:#241053;line-height:1.65;
+}
+.guide-theme:has(.guide-dashboard-polish) .page-heading {margin-top:24px;margin-bottom:6px}
+.guide-theme:has(.guide-monitor-polish) .page-heading {margin-top:12px;margin-bottom:4px}
+.guide-theme:has(:is(.guide-dashboard-polish,.guide-monitor-polish)) .workspace-navigation {font-size:.78rem;gap:10px;padding-block:10px}
+:is(.guide-dashboard-polish,.guide-monitor-polish) {--polish-ink:#291354;--polish-muted:#716b9d;gap:24px;color:var(--polish-ink)}
+:is(.guide-dashboard-polish,.guide-monitor-polish) .slice-subtitle {color:#736b9e;font-size:1rem;line-height:1.85;margin:0}
+:is(.guide-dashboard-polish,.guide-monitor-polish) .slice-grid {gap:16px}
+:is(.guide-dashboard-polish,.guide-monitor-polish) .slice-tile {
+  position:relative;border-radius:15px;padding:20px;gap:16px;box-shadow:0 5px 18px #6244a007;
+  background:linear-gradient(130deg,#fffaff,#f8f1ff);border-color:#ecdfff;color:var(--polish-ink);
+}
+:is(.guide-dashboard-polish,.guide-monitor-polish) .slice-tile.orange {background:linear-gradient(130deg,#fffdfb,#fff8ef);border-color:#faeadb}
+:is(.guide-dashboard-polish,.guide-monitor-polish) .slice-tile.blue {background:linear-gradient(130deg,#fbfdff,#f0f7ff);border-color:#d7e7fd}
+:is(.guide-dashboard-polish,.guide-monitor-polish) .slice-tile.green {background:linear-gradient(130deg,#fbfffe,#edf9f5);border-color:#d6efe7}
+:is(.guide-dashboard-polish,.guide-monitor-polish) .slice-tile>span {font-size:1rem;line-height:1.7;gap:14px;min-height:52px}
+:is(.guide-dashboard-polish,.guide-monitor-polish) .slice-tile .slice-icon {order:-1;margin:0;width:54px;height:54px;background:linear-gradient(140deg,#ebdaff,#f7eaff);color:#7220bd}
+:is(.guide-dashboard-polish,.guide-monitor-polish) .slice-icon svg {width:27px;height:27px;stroke-width:1.9}
+:is(.guide-dashboard-polish,.guide-monitor-polish) .slice-tile.orange .slice-icon {color:#cf3c30;background:#ffeadf}
+:is(.guide-dashboard-polish,.guide-monitor-polish) .slice-tile.blue .slice-icon {color:#1767b5;background:#dfedff}
+:is(.guide-dashboard-polish,.guide-monitor-polish) .slice-tile.green .slice-icon {color:#087b68;background:#d9f3e9}
+:is(.guide-dashboard-polish,.guide-monitor-polish) .slice-tile>strong {font-size:1.55rem;line-height:1.75;text-align:center;font-weight:750}
+:is(.guide-dashboard-polish,.guide-monitor-polish) .slice-tile small {color:#6d6799;font-size:.87rem;line-height:2.1;border-color:#e4def1;margin-top:auto}
+:is(.guide-dashboard-polish,.guide-monitor-polish) .slice-box {border:1px solid #e7e5f6;border-radius:14px;box-shadow:0 5px 20px #44338206;padding:20px}
+:is(.guide-dashboard-polish,.guide-monitor-polish) .slice-box h2 {font-size:1.06rem;line-height:1.75;color:#291354}
+:is(.guide-dashboard-polish,.guide-monitor-polish) .slice-icon {background:linear-gradient(140deg,#eee6ff,#f6f2ff);color:#6a33cd}
+:is(.guide-dashboard-polish,.guide-monitor-polish) .slice-box>header {margin-bottom:12px}
+:is(.guide-dashboard-polish,.guide-monitor-polish) .slice-button {border-color:#ddd0ff!important;background:linear-gradient(135deg,#fbf9ff,#f5f0ff)!important;color:#5a27b8!important;padding:10px 16px!important;border-radius:11px;font-size:.85rem;line-height:1.6}
+:is(.guide-dashboard-polish,.guide-monitor-polish) :is(a,button,select) {transition:background-color .16s,border-color .16s,box-shadow .16s,transform .16s}
+:is(.guide-dashboard-polish,.guide-monitor-polish) :is(a,button,select):focus-visible {outline:3px solid #9464e6;outline-offset:3px;box-shadow:0 0 0 5px #eee6ff}
+:is(.guide-dashboard-polish,.guide-monitor-polish) a.slice-tile:hover {border-color:#cbb4f3;box-shadow:0 7px 23px #58329912;transform:translateY(-2px)}
+:is(.guide-dashboard-polish,.guide-monitor-polish) :is(.slice-button,.slice-chip):hover {background:#eee5ff!important;border-color:#b59ae9!important}
+:is(.guide-dashboard-polish,.guide-monitor-polish) :is(a,button):active {transform:translateY(1px)}
+/* Dashboard composition. */
+.guide-dashboard-polish>.slice-grid.four {margin-top:2px}
+.guide-dashboard-polish>.slice-grid.four .slice-tile {min-height:220px}
+.guide-dashboard-polish>.slice-grid.four .slice-tile:last-child {background:linear-gradient(140deg,#fdfbff,#f5f0ff)}
+.guide-dashboard-polish>.slice-grid.four .slice-tile:last-child .slice-icon {background:#e9dfff;color:#6e27cb}
+.guide-dashboard-polish>.slice-grid.four .slice-tile:last-child>strong {order:3;align-self:flex-start;font-size:.98rem;font-weight:600;color:#fff;background:linear-gradient(135deg,#7945d3,#5424ad);padding:10px 18px;border-radius:12px;box-shadow:0 5px 12px #5931a91c;margin-top:auto}
+.guide-dashboard-polish>.slice-grid.four .slice-tile:last-child small {border:0;padding:0;margin:0}
+.guide-dashboard-polish>.slice-box {display:flex;align-items:center;gap:24px;padding:18px 22px}
+.guide-dashboard-polish>.slice-box>header {margin:0;flex:0 0 auto;padding-inline-end:22px;border-inline-end:1px solid #ded7ef}
+.guide-dashboard-polish>.slice-box>.slice-grid {flex:1;gap:16px}
+.guide-dashboard-polish>.slice-box .slice-chip {border:1px solid #f8dce5;border-radius:14px;padding:13px 10px;text-align:center;background:#fff1f4;color:#a52e4a;font-size:.9rem;line-height:1.7}
+.guide-dashboard-polish>.slice-box .slice-chip:nth-child(2) {background:#fff8ee;border-color:#f6e8d1;color:#a65814}
+.guide-dashboard-polish>.slice-box .slice-chip:nth-child(3) {background:#eef8f5;border-color:#d6ece5;color:#096951}
+.guide-dashboard-polish>.slice-grid.two .slice-box {border-top:4px solid #e8defe;padding:20px;position:relative;min-height:163px}
+.guide-dashboard-polish>.slice-grid.two .slice-box>header {margin-bottom:0}
+.guide-dashboard-polish>.slice-grid.two .slice-icon {width:58px;height:58px}
+.guide-dashboard-polish>.slice-grid.two h2 {font-size:1.22rem;gap:18px}
+.guide-dashboard-polish>.slice-grid.two .slice-box>p {margin:-12px 76px 18px 0;color:#7e76a5;font-size:.88rem;line-height:1.7}
+.guide-dashboard-polish .slice-module {font-size:.85rem;gap:18px;line-height:1.8}
+.guide-dashboard-polish .slice-module>span {flex:1;color:#70669e}
+.guide-dashboard-polish .slice-module>span+span {border-inline-start:1px solid #e4dff2;padding-inline-start:16px}
+.guide-dashboard-polish .slice-module>.slice-button {margin-inline-start:auto}
+/* Compact monitoring cards and custom chart tracks (no browser meter chrome). */
+.guide-monitor-polish {gap:18px}
+.guide-monitor-polish>.slice-grid.four {gap:14px}
+.guide-monitor-polish>.slice-grid.four .slice-tile {padding:16px 18px;gap:8px}
+.guide-monitor-polish .slice-tile>span {font-size:.93rem;min-height:46px}
+.guide-monitor-polish .slice-tile .slice-icon {width:46px;height:46px}
+.guide-monitor-polish .slice-tile>strong {font-size:1.25rem;line-height:1.6}
+.guide-monitor-polish .slice-tile>.slice-text {font-size:.8rem;line-height:1.6;color:#706897!important}
+.guide-monitor-polish .slice-levels {justify-content:center;gap:3px 9px;line-height:1.7}
+.guide-monitor-polish .slice-levels button {font-size:.9rem!important;border-radius:5px}
+.guide-monitor-polish .slice-levels button:hover,.guide-monitor-polish .slice-text:hover {background:#e9e1fa!important}
+.guide-monitor-polish>.slice-grid.two {gap:16px}
+.guide-monitor-polish>.slice-grid.two .slice-box {padding:16px 20px}
+.guide-monitor-polish .slice-bar {display:flex;gap:12px;padding:7px 6px!important;border-radius:8px;font-size:.83rem;min-height:33px;box-shadow:none!important}
+.guide-monitor-polish .slice-bar:hover {background:#f7f4fe!important}
+.guide-monitor-polish .slice-bar>span:first-child {flex:0 0 32%;width:auto;font-size:.84rem;color:#514575;line-height:1.8}
+.guide-monitor-polish .slice-bar>b {min-width:22px;text-align:center;font-weight:600;font-size:.86rem}
+.guide-monitor-polish .slice-bar>.polish-track {display:block;flex:1;width:auto;height:10px;min-width:24px;background:#ecebf6;border-radius:99px;overflow:hidden}
+.guide-monitor-polish .polish-track>span {display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#b397eb,#7753b9)}
+.guide-monitor-polish .slice-bar>small {flex:0 0 35px;color:#746b96;text-align:end;font-size:.8rem}
+.guide-monitor-polish .slice-bar[data-domain=health] .polish-track>span {background:linear-gradient(90deg,#c4b1ef,#9676cf)}
+.guide-monitor-polish .slice-bar[data-domain=housing] .polish-track>span {background:linear-gradient(90deg,#adbfeb,#7f98d4)}
+.guide-monitor-polish .slice-bar[data-domain=vulnerability] .polish-track>span {background:linear-gradient(90deg,#a6cfc5,#6ea799)}
+.guide-monitor-polish .slice-bar[data-domain=education] .polish-track>span {background:linear-gradient(90deg,#d6bbed,#b391d2)}
+.guide-monitor-polish .slice-bar[data-level=UNKNOWN] .polish-track>span {background:linear-gradient(90deg,#c7bce1,#a396be)}
+.guide-monitor-polish .slice-grid.five {gap:16px}
+.guide-monitor-polish .guide-field {gap:6px;color:#716693;font-size:.78rem}
+.guide-monitor-polish .guide-field select {min-width:0;width:100%;height:37px;border:1px solid #dcd5ec;border-radius:9px;background-color:#fff;color:#514370;font:inherit;padding:5px 10px;box-shadow:0 1px 3px #42256903}
+.guide-monitor-polish .guide-field select:hover {border-color:#b9a2d9}
+.guide-monitor-polish>.slice-box:has(.slice-grid.five) {padding:14px 18px}
+.guide-monitor-polish>.slice-box:has(.slice-grid.five)>header {margin-bottom:5px}
+.guide-monitor-polish>.slice-box:has(table) {padding:14px 18px}
+.guide-monitor-polish>.slice-box:has(table)>header {margin-bottom:3px}
+.guide-monitor-polish>.slice-box>small {display:block;color:#83779f;font-size:.75rem;margin:0 0 10px}
+.guide-monitor-polish .table-scroll {border-radius:10px}
+.guide-monitor-polish table {font-size:.77rem;line-height:1.55}
+.guide-monitor-polish th {background:#f4f0fd;color:#5d4b85;padding:7px 8px;font-weight:600;white-space:nowrap;border:0}
+.guide-monitor-polish td {padding:7px 8px;border-bottom:1px solid #eeebf7;color:#62527e}
+.guide-monitor-polish tbody tr:hover {background:#faf7ff}
+.guide-monitor-polish tbody tr:last-child td {border-bottom:0}
+.guide-monitor-polish td:first-child a {font-weight:600;color:#544077;text-decoration:none}
+.guide-monitor-polish .slice-code {font-size:.7rem;color:#8c82a6;margin-top:2px}
+.guide-monitor-polish .polish-badge,.guide-monitor-polish .polish-level {display:inline-block;border-radius:7px;font-size:.73rem;line-height:1.6;padding:2px 8px;white-space:nowrap;color:#6f638a;background:#f0edf6;font-weight:500;text-align:center}
+.guide-monitor-polish .polish-level {min-width:47px}
+.guide-monitor-polish [data-level=A].polish-level,.guide-monitor-polish [data-status=CURRENT] {background:#e3f5ec;color:#16704f}
+.guide-monitor-polish [data-level=B].polish-level {background:#e7f0ff;color:#2f64a6}
+.guide-monitor-polish [data-level=C].polish-level,.guide-monitor-polish [data-status=REVIEW_REQUIRED],.guide-monitor-polish [data-urgency=IMPORTANT] {background:#fff2d9;color:#8b6017}
+.guide-monitor-polish [data-level=D].polish-level,.guide-monitor-polish [data-status=INCOMPLETE],.guide-monitor-polish [data-urgency=IMMEDIATE] {background:#ffebef;color:#b63755}
+.guide-monitor-polish [data-urgency=NECESSARY] {background:#fff0e4;color:#a65c21}
+.guide-monitor-polish td .slice-button {padding:4px 10px!important;font-size:.73rem;border-radius:7px;background:#fff!important}
+.guide-monitor-polish .slice-pagination {gap:10px;padding-top:12px;border-top:1px solid #f0edf7;margin-top:10px;font-size:.8rem;color:#776791}
+.guide-monitor-polish .slice-pagination>span {padding:6px 12px;border-radius:8px;background:#f6f1ff;color:#5a338f}
+.guide-monitor-polish .slice-pagination button {padding:7px 14px!important;border-radius:9px!important}
+.guide-monitor-polish .slice-pagination button:not(:disabled):hover {background:#e7dcfb!important;border-color:#a98cd8!important}
+.guide-monitor-polish .slice-pagination button:disabled {opacity:.5;background:#f5f3f8!important;border-color:#e7e1ee!important;cursor:not-allowed;transform:none}
+.guide-monitor-polish .slice-pagination .guide-field {margin-inline-start:auto;max-width:110px}
+:is(.guide-dashboard-polish,.guide-monitor-polish) .slice-footer {margin-top:8px;padding:19px 6px;font-size:.78rem;color:#8173a7;line-height:1.8;align-items:center}
+@media(max-width:1100px) {
+ .guide-dashboard-polish>.slice-box {flex-wrap:wrap;gap:12px}
+ .guide-dashboard-polish>.slice-box>header {border:0;padding:0}
+ .guide-dashboard-polish>.slice-box>.slice-grid {flex-basis:100%}
+ .guide-dashboard-polish .slice-module {flex-wrap:wrap;gap:10px}
+ .guide-dashboard-polish .slice-module>span {min-width:38%}
+ .guide-monitor-polish .slice-bar>span:first-child {flex-basis:39%}
+}
+@media(max-width:1000px) {
+ .guide-monitor-polish .slice-grid.five {grid-template-columns:repeat(2,minmax(0,1fr))}
+ .guide-dashboard-polish>.slice-grid.four .slice-tile {min-height:195px}
+ .guide-monitor-polish>.slice-grid.two {grid-template-columns:1fr}
+}
+@media(max-width:620px) {
+ .guide-theme:has(:is(.guide-dashboard-polish,.guide-monitor-polish)) {padding:10px}
+ .guide-theme:has(:is(.guide-dashboard-polish,.guide-monitor-polish)) .home-header {padding:14px 12px}
+ :is(.guide-dashboard-polish,.guide-monitor-polish) {gap:14px}
+ :is(.guide-dashboard-polish,.guide-monitor-polish) .slice-subtitle {font-size:.85rem}
+ :is(.guide-dashboard-polish,.guide-monitor-polish) .slice-tile {padding:13px 10px;gap:10px}
+ :is(.guide-dashboard-polish,.guide-monitor-polish) .slice-tile>span {font-size:.8rem;gap:6px;align-items:flex-start;flex-direction:column}
+ :is(.guide-dashboard-polish,.guide-monitor-polish) .slice-tile .slice-icon {width:38px;height:38px}
+ :is(.guide-dashboard-polish,.guide-monitor-polish) .slice-icon svg {width:22px;height:22px}
+ :is(.guide-dashboard-polish,.guide-monitor-polish) .slice-tile>strong {font-size:1.04rem;text-align:right}
+ :is(.guide-dashboard-polish,.guide-monitor-polish) .slice-tile small {font-size:.76rem}
+ .guide-dashboard-polish>.slice-grid.four .slice-tile:last-child>strong {font-size:.8rem;padding:8px 10px}
+ .guide-dashboard-polish>.slice-box {padding:14px}
+ .guide-dashboard-polish>.slice-grid.two .slice-box {padding:15px}
+ .guide-dashboard-polish>.slice-grid.two h2 {font-size:1.08rem;gap:10px}
+ .guide-dashboard-polish>.slice-grid.two .slice-icon {width:45px;height:45px}
+ .guide-dashboard-polish>.slice-grid.two .slice-box>p {margin:4px 55px 14px 0;font-size:.8rem}
+ .guide-monitor-polish .slice-grid.five {gap:12px}
+ .guide-monitor-polish .slice-bar {gap:7px}
+ .guide-monitor-polish .slice-bar>span:first-child {font-size:.76rem}
+ .guide-monitor-polish .slice-bar>small {font-size:.73rem;flex-basis:30px}
+ .guide-monitor-polish table {min-width:870px}
+ :is(.guide-dashboard-polish,.guide-monitor-polish) .slice-footer {gap:10px}
+ :is(.guide-dashboard-polish,.guide-monitor-polish) .slice-footer span:last-child {margin:0;flex-basis:100%}
+}
+@media(prefers-reduced-motion:reduce) {
+ :is(.guide-dashboard-polish,.guide-monitor-polish) :is(a,button,select) {transition:none}
+}

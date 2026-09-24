@@ -102,7 +102,7 @@ try {
   const page = await context.newPage();
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto(origin + '/login'); await page.locator('#username').fill('Aseman'); await page.locator('#password').fill(password); await page.locator('#password').press('Enter');
-  await page.waitForURL('**/guide'); await page.getByRole('heading', { name: 'صفحه اصلی راهبر عالی' }).waitFor();
+  await page.waitForURL('**/guide'); await page.getByRole('heading', { name: 'صفحه اصلی همیار شاهد' }).waitFor();
   assert.equal(await page.locator('.slice-module').count(), 4); assert.equal(await page.locator('.slice-module[aria-disabled=true]').count(), 0);
   assert.equal(await page.locator('.slice-module a').count(), 4);
   assert.equal(await page.locator('html').getAttribute('dir'), 'rtl');
