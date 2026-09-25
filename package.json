@@ -29,7 +29,9 @@
     "db:seed:roles:dev": "pnpm build:tools && node --env-file=.env apps/backend/.tools/scripts/seed-roles-dev.js",
     "test:roles": "pnpm build:tools && node --env-file=.env scripts/run-regression.mjs roles",
     "db:seed:livelihood:dev": "pnpm build:tools && node --env-file=.env apps/backend/.tools/scripts/seed-livelihood-dev.js",
-    "test:livelihood": "pnpm build:tools && node --env-file=.env scripts/run-regression.mjs livelihood"
+    "test:livelihood": "pnpm build:tools && node --env-file=.env scripts/run-regression.mjs livelihood",
+    "db:seed:livelihood:scenarios:dev": "pnpm db:seed:livelihood:dev && node --env-file=.env apps/backend/.tools/scripts/seed-livelihood-scenarios-dev.js",
+    "test:livelihood:seed": "pnpm build:tools && node --env-file=.env scripts/run-regression.mjs livelihoodSeed"
   },
   "devDependencies": {
     "playwright": "1.62.1"

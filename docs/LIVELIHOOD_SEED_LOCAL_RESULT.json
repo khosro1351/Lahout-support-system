@@ -1,0 +1,38 @@
+{
+  "date": "2026-09-25T07:25:03.674Z",
+  "families": 50,
+  "activeMembers": 200,
+  "assessments": 50,
+  "workflow": {
+    "APPROVED": 20,
+    "IN_PROGRESS": 7,
+    "RETURNED": 8,
+    "SUBMITTED": 10,
+    "UNKNOWN": 5
+  },
+  "scores": {
+    "count": 49,
+    "unknown": 1,
+    "min": 0,
+    "max": 30,
+    "average": 14.979591836734693,
+    "completeCount": 38,
+    "completeAverage": 15.18421052631579
+  },
+  "validSnapshots": 20,
+  "protectedTables": [
+    "identity.accounts",
+    "identity.role_assignments",
+    "organization.groups",
+    "identity.people",
+    "family.families",
+    "family.family_memberships",
+    "family.head_history",
+    "family.documents",
+    "assessment.models",
+    "assessment.snapshots",
+    "identity.access_requests",
+    "identity.access_request_decisions"
+  ],
+  "preservation": "PASS"
+}
