@@ -1,0 +1,6 @@
+/* Project-local fonts from the user-provided Liana Pro archive. */
+@font-face{font-family:'Liana';src:url('./assets/fonts/Liana-VF.woff2') format('woff2');font-weight:100 900;font-style:normal;font-display:swap}
+@font-face{font-family:'Liana FD';src:url('./assets/fonts/Liana-FD-VF.woff2') format('woff2');font-weight:100 900;font-style:normal;font-display:swap;unicode-range:U+0030-0039,U+0660-0669,U+06F0-06F9}
+:root{font-synthesis:none}
+body,button,input,select,textarea{font-family:'Liana FD','Liana',Tahoma,Arial,sans-serif}
+bdi,code,pre,[dir="ltr"]{font-family:'Liana',Tahoma,Arial,sans-serif}

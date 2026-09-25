@@ -1,0 +1,91 @@
+{
+  "date": "2026-09-25T12:30:13.700Z",
+  "status": "PASS",
+  "tables": [
+    {
+      "table": "identity.people",
+      "count": 273,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "identity.accounts",
+      "count": 36,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "identity.role_assignments",
+      "count": 46,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "organization.groups",
+      "count": 10,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "family.families",
+      "count": 59,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "family.family_memberships",
+      "count": 237,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "family.head_history",
+      "count": 59,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "family.documents",
+      "count": 159,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "family.document_context",
+      "count": 150,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "assessment.models",
+      "count": 2,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "assessment.snapshots",
+      "count": 9,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "assessment.domain_reviews",
+      "count": 50,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "assessment.domain_submissions",
+      "count": 38,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "assessment.domain_decisions",
+      "count": 28,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "guidance.history",
+      "count": 607,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "identity.access_requests",
+      "count": 3,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "identity.access_request_decisions",
+      "count": 3,
+      "status": "UNCHANGED"
+    }
+  ]
+}

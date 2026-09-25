@@ -72,6 +72,7 @@ try {
  await post('/auth/simulation',{roleCode:'SUPREME_GUIDE'},leader,403);
  assert.equal((await req('/auth/simulation',{cookie:tech.cookie,body:{roleCode:'SUPREME_GUIDE'}})).status,403);
  pass('Technical role has no organizational superuser permissions; role/API/CSRF escalation attempts are denied');
+ run('.tools/scripts/seed-livelihood-dev.js');
  const info=await get('/technical/status',tech),group=info.groups.find(g=>g.name==='گروه آزمایشی 1')??info.groups[0];
  await post('/auth/simulation',{roleCode:'GROUP_LEADER'},tech,400);await post('/auth/simulation',{roleCode:'GROUP_LEADER',groupId:'invalid'},tech,400);
  const homes={SUPREME_GUIDE:'/guide',EXECUTIVE_MANAGER:'/executive',GROUP_LEADER:'/leader',HELPER:'/helper',COUNCIL_MEMBER:'/council'};
@@ -109,8 +110,8 @@ try {
  await context.close();const tc=await browser.newContext({viewport:{width:1440,height:1000}});await tc.addCookies([{name:'lahout_session',value:tech.cookie.split('=')[1],url:origin,httpOnly:true,sameSite:'Strict'}]);const tp=await tc.newPage();tp.on('pageerror',e=>errors.push(e.message));
  await tp.goto(origin+'/technical');await tp.getByRole('heading',{name:'پنل پشتیبان فنی سامانه',exact:true}).waitFor();await tp.getByRole('heading',{name:'ورود آزمایشی به داشبورد نقش‌ها',exact:true}).waitFor();await tp.screenshot({path:path.join(out,'technical.png'),fullPage:true});
  for(const roleCode of Object.keys(homes)){
-  if(['GROUP_LEADER','HELPER'].includes(roleCode))await tp.getByLabel('گروه برای آزمایش سرگروه یا همیار').selectOption(group.id);
-  const label=info.roles.find(r=>r.code===roleCode).label;await tp.getByRole('button',{name:label+' ورود آزمایشی به داشبورد ←',exact:false}).click();await tp.waitForURL('**'+homes[roleCode]).catch(async e=>{console.log('Simulation navigation failure',roleCode,tp.url(),await tp.locator('body').innerText());await tp.screenshot({path:path.join(out,'simulation-failure.png'),fullPage:true});throw e;});await tp.getByText('حالت آزمایش: '+label,{exact:true}).waitFor();await tp.getByRole('heading',{name:roleCode==='SUPREME_GUIDE'?'صفحه اصلی همیار شاهد':'داشبورد '+label,exact:true}).waitFor();await tp.waitForTimeout(250);
+  if(['GROUP_LEADER','HELPER'].includes(roleCode)){const label=info.roles.find(r=>r.code===roleCode).label;await tp.getByRole('button',{name:'انتخاب گروه برای '+label,exact:true}).click();await tp.getByLabel('گروه برای آزمایش '+label,{exact:true}).selectOption(group.id);}
+  const label=info.roles.find(r=>r.code===roleCode).label;await tp.getByRole('button',{name:'ورود آزمایشی '+label,exact:true}).click();await tp.waitForURL('**'+homes[roleCode]).catch(async e=>{console.log('Simulation navigation failure',roleCode,tp.url(),await tp.locator('body').innerText());await tp.screenshot({path:path.join(out,'simulation-failure.png'),fullPage:true});throw e;});await tp.getByText('حالت آزمایش: '+label,{exact:true}).waitFor();await tp.getByRole('heading',{name:roleCode==='SUPREME_GUIDE'?'صفحه اصلی همیار شاهد':'داشبورد '+label,exact:true}).waitFor();await tp.waitForTimeout(250);
   const side=await tp.locator('.role-sidebar').boundingBox();assert.ok(side.x>1000);assert.equal(await tp.locator('[dir="rtl"]').count()>0,true);
   await tp.screenshot({path:path.join(out,roleCode.toLowerCase()+'.png'),fullPage:true});
   await tp.getByRole('button',{name:'بازگشت به پنل پشتیبان فنی',exact:true}).click();await tp.waitForURL('**/technical');await tp.getByRole('heading',{name:'ورود آزمایشی به داشبورد نقش‌ها',exact:true}).waitFor();

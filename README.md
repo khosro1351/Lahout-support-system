@@ -228,3 +228,5 @@ docs/                     Business Rules و گزارش تثبیت
 اطلاعات پایه/اعضا، مدارک، معیشت از ۳۰، ارسال و تصمیم مدیر اجرایی، و مشاهده نتیجه تأییدشده همیار شاهد عملیاتی شده‌اند. راه‌اندازی، حساب‌های آزمایشی، مسیرها و حدود تکمیل در [گزارش معیشت](docs/LIVELIHOOD_DELIVERY_FA.md) آمده است. Migrationها اکنون ۱۱ موردند؛ Seed جدید `pnpm.cmd db:seed:livelihood:dev` فقط توسعه است. هیچ رمز واقعی در Source نیست.
 
 برای ساخت ۵۰ ارزیابی متنوع توسعه‌ای با گردش تأیید/برگشت و داده‌های طبیعی‌نما، `pnpm.cmd db:seed:livelihood:scenarios:dev` را اجرا کنید. جزئیات، محدودیت‌ها و آمار در [گزارش Seed معیشت](docs/LIVELIHOOD_SEED_DELIVERY_FA.md) آمده است. این فرمان داده‌های قبلی یا اصلاحات کاربر را Reset نمی‌کند و Migration جدید ندارد.
+
+پنل پشتیبان فنی، Home/Back نقش فعال، نمایش کاربران جاری/Legacy و فونت‌های محلی Liana تثبیت شده‌اند. جزئیات صفحات، تست‌ها و موارد Deferred در [گزارش UI پنل فنی](docs/TECHNICAL_UI_DELIVERY_FA.md) است. تست اختصاصی: `pnpm.cmd test:technical:ui`؛ Migration جدید لازم نیست.

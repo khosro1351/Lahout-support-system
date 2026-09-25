@@ -1,0 +1,18 @@
+{
+  "source": "User-provided Liana-v1.0-Pro.zip",
+  "purpose": "Local project typography; regular text and Persian digits",
+  "files": [
+    {
+      "file": "Liana-VF.woff2",
+      "zipEntry": "Liana/Variable/Liana-VF.woff2",
+      "bytes": 54768,
+      "sha256": "e8417d96f1c2b8e40049b8a87e21066ea130cd105780ea2745c5f505d1484238"
+    },
+    {
+      "file": "Liana-FD-VF.woff2",
+      "zipEntry": "FD(Farsi-Digits)/Liana-FD/Variable/Liana-FD-VF.woff2",
+      "bytes": 53016,
+      "sha256": "0b03cea23a9982f7a72f8e0069d578b11b82dfaa93019d53c49a7dd6031cde92"
+    }
+  ]
+}
