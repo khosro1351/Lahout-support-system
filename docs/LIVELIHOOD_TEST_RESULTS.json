@@ -1,0 +1,486 @@
+{
+  "date": "2026-09-25T02:08:21.177272+00:00",
+  "typecheck": "PASS",
+  "build": "PASS",
+  "buildWarning": "Frontend bundle exceeds 500 kB; non-blocking warning.",
+  "pass": 110,
+  "fail": 0,
+  "database": "Real PostgreSQL 17; isolated databases for regression tests",
+  "suites": {
+    "login": {
+      "date": "2026-09-25T01:59:13.149Z",
+      "database": "Real PostgreSQL, isolated database removed after tests",
+      "results": [
+        {
+          "name": "Original PostgreSQL migrations apply and rerun safely",
+          "status": "PASS"
+        },
+        {
+          "name": "Aseman seed is idempotent and stores Argon2id only",
+          "status": "PASS"
+        },
+        {
+          "name": "Guide API rejects unauthenticated access",
+          "status": "PASS"
+        },
+        {
+          "name": "Malformed JSON and excessive request bodies return safe 4xx errors",
+          "status": "PASS"
+        },
+        {
+          "name": "Missing, wrong-type and oversized fields are rejected safely",
+          "status": "PASS"
+        },
+        {
+          "name": "Unknown, wrong-password, suspended and roleless accounts share safe errors",
+          "status": "PASS"
+        },
+        {
+          "name": "Aseman login accepts case and outer whitespace and routes to guide",
+          "status": "PASS"
+        },
+        {
+          "name": "Opaque HttpOnly/Strict cookie, hashed server token, expiry and no-store",
+          "status": "PASS"
+        },
+        {
+          "name": "Session restores identity and authorizes guide endpoint",
+          "status": "PASS"
+        },
+        {
+          "name": "Re-login rotates token and revokes previous session",
+          "status": "PASS"
+        },
+        {
+          "name": "Missing or incorrect CSRF cannot log out a session",
+          "status": "PASS"
+        },
+        {
+          "name": "Cross-origin login is rejected",
+          "status": "PASS"
+        },
+        {
+          "name": "Logout revokes database session and clears cookie",
+          "status": "PASS"
+        },
+        {
+          "name": "Registered mobile works with Latin, Persian, Arabic and +98 input",
+          "status": "PASS"
+        },
+        {
+          "name": "Expired session is rejected",
+          "status": "PASS"
+        },
+        {
+          "name": "Role revocation is enforced by server on existing session",
+          "status": "PASS"
+        },
+        {
+          "name": "Disabled account loses existing session access",
+          "status": "PASS"
+        },
+        {
+          "name": "Deferred family API is inactive",
+          "status": "PASS"
+        },
+        {
+          "name": "Login rate limit blocks excess attempts",
+          "status": "PASS"
+        },
+        {
+          "name": "Production configuration issues Secure cookie",
+          "status": "PASS"
+        },
+        {
+          "name": "Production refuses insecure cookie configuration",
+          "status": "PASS"
+        },
+        {
+          "name": "Browser direct access redirects to blank Persian RTL login",
+          "status": "PASS"
+        },
+        {
+          "name": "Browser empty-field validation",
+          "status": "PASS"
+        },
+        {
+          "name": "Password visibility toggle, Enter submit and safe failure",
+          "status": "PASS"
+        },
+        {
+          "name": "Browser Aseman login reaches authorized guide home with inaccessible cookie",
+          "status": "PASS"
+        },
+        {
+          "name": "Browser refresh preserves session",
+          "status": "PASS"
+        },
+        {
+          "name": "Browser logout prevents re-entry",
+          "status": "PASS"
+        },
+        {
+          "name": "Mobile 390px layout has no horizontal overflow",
+          "status": "PASS"
+        },
+        {
+          "name": "Expired browser session returns to login",
+          "status": "PASS"
+        },
+        {
+          "name": "Network failure is safe and submit recovers",
+          "status": "PASS"
+        },
+        {
+          "name": "No browser JavaScript exceptions",
+          "status": "PASS"
+        }
+      ]
+    },
+    "access_requests": {
+      "date": "2026-09-25T01:59:53.452Z",
+      "database": "Isolated real PostgreSQL database, removed after test",
+      "results": [
+        {
+          "name": "Migration and idempotent Development/Test seed create exactly three pending requests",
+          "status": "PASS"
+        },
+        {
+          "name": "Development access seed refuses production",
+          "status": "PASS"
+        },
+        {
+          "name": "Guide list returns all required request information",
+          "status": "PASS"
+        },
+        {
+          "name": "Anonymous and authenticated non-SUPREME_GUIDE users cannot read or decide",
+          "status": "PASS"
+        },
+        {
+          "name": "Decision endpoint preserves CSRF and Origin protection",
+          "status": "PASS"
+        },
+        {
+          "name": "Server blocks empty rejection reason, invalid types, decisions and IDs",
+          "status": "PASS"
+        },
+        {
+          "name": "Browser Aseman login reaches RTL guide home with four supervisory domains; legacy access flow preserved outside navigation",
+          "status": "PASS"
+        },
+        {
+          "name": "Browser lists the three Development/Test requests with details",
+          "status": "PASS"
+        },
+        {
+          "name": "Browser approval persists after refresh and final request has no decision buttons",
+          "status": "PASS"
+        },
+        {
+          "name": "Approved history stores the guide identity, timestamp and decision in PostgreSQL",
+          "status": "PASS"
+        },
+        {
+          "name": "Server rejects both approve and reject on an already decided request",
+          "status": "PASS"
+        },
+        {
+          "name": "Browser blocks rejection without a reason and leaves the request pending",
+          "status": "PASS"
+        },
+        {
+          "name": "Browser rejection reason and immutable rejected status persist after refresh",
+          "status": "PASS"
+        },
+        {
+          "name": "Audit records both decisions and the rejection reason with the correct actor",
+          "status": "PASS"
+        },
+        {
+          "name": "Concurrent decisions produce exactly one final state, history and audit",
+          "status": "PASS"
+        },
+        {
+          "name": "PostgreSQL blocks direct final-status edits and history update/delete",
+          "status": "PASS"
+        },
+        {
+          "name": "Rerunning development seed does not reset final decisions",
+          "status": "PASS"
+        },
+        {
+          "name": "Approvals and rejections do not create accounts or change role assignments",
+          "status": "PASS"
+        },
+        {
+          "name": "Audit failure rolls back both status and decision history atomically",
+          "status": "PASS"
+        },
+        {
+          "name": "Browser status filter shows the selected decision state",
+          "status": "PASS"
+        },
+        {
+          "name": "Guide home and request list have no horizontal overflow at mobile width",
+          "status": "PASS"
+        },
+        {
+          "name": "Browser flow completes without JavaScript exceptions",
+          "status": "PASS"
+        }
+      ]
+    },
+    "guide_and_legacy_assessment": {
+      "date": "2026-09-25T02:01:25.095Z",
+      "results": [
+        {
+          "name": "Eleven additive migrations, repeatable Persian development fixtures and nine versioned assessments",
+          "status": "PASS"
+        },
+        {
+          "name": "People contains only organizational persons; Persian names and guide exclusion",
+          "status": "PASS"
+        },
+        {
+          "name": "Assignment and end responsibility retain authentic actor/time history",
+          "status": "PASS"
+        },
+        {
+          "name": "Zero is valid; healthy members yield zero health; education N/A normalizes to 85",
+          "status": "PASS"
+        },
+        {
+          "name": "Approved domain tables calculate exactly; high score alone creates no critical flag; low score can be critical",
+          "status": "PASS"
+        },
+        {
+          "name": "Unknown prevents finalization, duplicate medical impact is flagged, current dropout does not score as future risk",
+          "status": "PASS"
+        },
+        {
+          "name": "Leader draft/save/submit with optimistic version; guide/helper edits blocked; manual scores rejected; immutable historical members/model",
+          "status": "PASS"
+        },
+        {
+          "name": "Evidence upload restricted to responsible leader, immutable document and versioned snapshot evidence",
+          "status": "PASS"
+        },
+        {
+          "name": "Model draft-approved-active-retired transitions preserve historical model links",
+          "status": "PASS"
+        },
+        {
+          "name": "Alert dedup, observation, owner-only lifecycle, explicit result and no automatic resolution after trigger disappearance",
+          "status": "PASS"
+        },
+        {
+          "name": "Family transfer preserves source/target actor/time and updates authorization",
+          "status": "PASS"
+        },
+        {
+          "name": "Real managerial summary; searchable final council archive; former intervention and permission writes retired",
+          "status": "PASS"
+        },
+        {
+          "name": "Managerial report templates, drill-down, technical-field exclusion, real XLSX and disabled PDF",
+          "status": "PASS"
+        },
+        {
+          "name": "Guide monitoring API protects role; immutable board snapshot, visits, notes and linked evidence remain separate from alerts",
+          "status": "PASS"
+        },
+        {
+          "name": "Independent monitoring list: five filters, linked chart chip, sorting, page size and exact drill-back state",
+          "status": "PASS"
+        },
+        {
+          "name": "Seven real PostgreSQL/browser pages captured; guide versions reuse identical read-only five-domain schema and expose no write controls",
+          "status": "PASS"
+        },
+        {
+          "name": "All seven guide read pages fit mobile and tablet without document overflow",
+          "status": "PASS"
+        },
+        {
+          "name": "Real PostgreSQL dataset above twenty rows paginates correctly and resets page for 100-row size",
+          "status": "PASS"
+        },
+        {
+          "name": "Browser dashboard four modules, Persian organizational people and separate end-responsibility selection",
+          "status": "PASS"
+        },
+        {
+          "name": "Browser persistent family selection with explicit deselect; guide uses shared five-domain read-only form",
+          "status": "PASS"
+        },
+        {
+          "name": "Browser leader shared form creates and reloads a persistent draft without manual score fields",
+          "status": "PASS"
+        },
+        {
+          "name": "Browser completes all five shared domains and submits a calculated final zero assessment with education N/A",
+          "status": "PASS"
+        },
+        {
+          "name": "Browser report and print preview contain no raw enums/UUID; council read-only; mobile tables scroll without page overflow",
+          "status": "PASS"
+        },
+        {
+          "name": "Desktop, tablet and mobile: login, people, groups, family workspace, read-only/editable assessments, reports and access requests",
+          "status": "PASS"
+        }
+      ]
+    },
+    "multi_role": {
+      "date": "2026-09-25T02:02:25.290Z",
+      "results": [
+        {
+          "name": "Additive migration and idempotent development role seed preserve families, snapshots and access requests; production seed blocked",
+          "status": "PASS"
+        },
+        {
+          "name": "All six single-role accounts route to their own dashboard; multi-role login starts with no effective permissions",
+          "status": "PASS"
+        },
+        {
+          "name": "Role selection persists server-side, rejects unassigned roles and never unions permissions",
+          "status": "PASS"
+        },
+        {
+          "name": "Technical role has no organizational superuser permissions; role/API/CSRF escalation attempts are denied",
+          "status": "PASS"
+        },
+        {
+          "name": "All five technical simulations use only the selected real role and explicit group scope; exit restores technical context",
+          "status": "PASS"
+        },
+        {
+          "name": "Simulated allowed draft write preserves real actor and effective role in both history and audit; foreign family denied",
+          "status": "PASS"
+        },
+        {
+          "name": "Helper simulation cannot use leader draft/submit permissions",
+          "status": "PASS"
+        },
+        {
+          "name": "Technical user and audit read models contain no password hashes or session tokens",
+          "status": "PASS"
+        },
+        {
+          "name": "Browser multi-role login, selection, refresh and unauthorized route denial",
+          "status": "PASS"
+        },
+        {
+          "name": "Browser enters/exits all five simulation dashboards; visible banner and right-hand RTL sidebar",
+          "status": "PASS"
+        },
+        {
+          "name": "Technical tablet/mobile menu and document width pass with no JavaScript exceptions",
+          "status": "PASS"
+        },
+        {
+          "name": "Inactive simulation scope fails closed while exit to technical dashboard remains available",
+          "status": "PASS"
+        },
+        {
+          "name": "Current role revocation is enforced on an existing session",
+          "status": "PASS"
+        }
+      ]
+    },
+    "livelihood": {
+      "date": "2026-09-25T02:05:49.901Z",
+      "results": [
+        {
+          "name": "Eleven migrations and idempotent development-only seed: exactly 50 families, 5 groups, 19 accounts, 9 council members; previous snapshots preserved",
+          "status": "PASS"
+        },
+        {
+          "name": "Leader/helper are limited to assigned group; Shahdeh and five leaders retain multi-role selection; technical role has no organizational grant",
+          "status": "PASS"
+        },
+        {
+          "name": "Leader updates shared base/member data with optimistic version; helper mutation and stale update blocked",
+          "status": "PASS"
+        },
+        {
+          "name": "Missing/unknown is never zero; incomplete submit and manually supplied scores are blocked by backend",
+          "status": "PASS"
+        },
+        {
+          "name": "All four official scoring columns exactly yield 0/9/19/30; scenario scores 20/30; context creates no independent score and no final 100 or level",
+          "status": "PASS"
+        },
+        {
+          "name": "Critical livelihood need creates an immediate operational alert before submission; zero score can be critical and clearing a checkbox does not resolve the alert",
+          "status": "PASS"
+        },
+        {
+          "name": "Required identity evidence is enforced independently of checklist claims",
+          "status": "PASS"
+        },
+        {
+          "name": "Scoped evidence upload/download works, wrong content type and foreign family are blocked; document bytes remain immutable",
+          "status": "PASS"
+        },
+        {
+          "name": "Complete submit freezes answers and enters executive queue; begin review and mandatory reason return are persisted; guide sees no unapproved version",
+          "status": "PASS"
+        },
+        {
+          "name": "Returned draft corrects/resubmits as new immutable submission; executive approval sets actor/time and one-calendar-year validity; stale/double decisions blocked",
+          "status": "PASS"
+        },
+        {
+          "name": "Guide sees approved partial result; later family edits cannot change snapshot; PostgreSQL protects approved review, submission and decision history",
+          "status": "PASS"
+        },
+        {
+          "name": "Simulation records technical real actor plus effective leader role; all lifecycle actions retain authentic history",
+          "status": "PASS"
+        },
+        {
+          "name": "Browser fills base data, uploads evidence, completes all livelihood sections, computes 20/30 and submits; incomplete UI submit is disabled",
+          "status": "PASS"
+        },
+        {
+          "name": "Browser executive receives real queue, approves with persistent refresh; existing guide family page exposes read-only approved partial result",
+          "status": "PASS"
+        },
+        {
+          "name": "New workflow pages are RTL with right sidebar, fit mobile/tablet and have no JavaScript exceptions",
+          "status": "PASS"
+        }
+      ]
+    },
+    "staging_local": {
+      "date": "2026-09-25T02:06:09.857Z",
+      "results": [
+        {
+          "name": "Staging preparation rejects production and non-staging databases",
+          "status": "PASS"
+        },
+        {
+          "name": "Dedicated staging database: eleven migrations, synthetic seed, repeat preserves account password",
+          "status": "PASS"
+        },
+        {
+          "name": "Cloud launcher binds public port and health verifies real PostgreSQL",
+          "status": "PASS"
+        },
+        {
+          "name": "Single-origin compiled UI, deep links and assets work; private files and unknown APIs remain unavailable",
+          "status": "PASS"
+        },
+        {
+          "name": "Staging-only guide login uses secure session cookie and role routing",
+          "status": "PASS"
+        }
+      ]
+    }
+  },
+  "localBrowser": "LIVELIHOOD_LOCAL_BROWSER.json",
+  "dataPreservation": "LIVELIHOOD_DATA_PRESERVATION.json",
+  "push": "NOT PERFORMED"
+}

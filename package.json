@@ -27,7 +27,9 @@
     "test:staging": "node --env-file=.env tests/staging-runtime.mjs",
     "db:seed:family-read:dev": "pnpm build:tools && node --env-file=.env apps/backend/.tools/scripts/seed-family-read-dev.js",
     "db:seed:roles:dev": "pnpm build:tools && node --env-file=.env apps/backend/.tools/scripts/seed-roles-dev.js",
-    "test:roles": "pnpm build:tools && node --env-file=.env scripts/run-regression.mjs roles"
+    "test:roles": "pnpm build:tools && node --env-file=.env scripts/run-regression.mjs roles",
+    "db:seed:livelihood:dev": "pnpm build:tools && node --env-file=.env apps/backend/.tools/scripts/seed-livelihood-dev.js",
+    "test:livelihood": "pnpm build:tools && node --env-file=.env scripts/run-regression.mjs livelihood"
   },
   "devDependencies": {
     "playwright": "1.62.1"

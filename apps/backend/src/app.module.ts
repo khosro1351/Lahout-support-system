@@ -1,3 +1,4 @@
+import {LivelihoodModule} from './livelihood/livelihood.module';
 import {RoleWorkspaceModule} from './auth/role-workspace.module';
 import {OversightModule} from './oversight/oversight.module';
 import { ReviewModule } from './review/review.module';
@@ -22,6 +23,7 @@ import { AccessRequestsModule } from './access-requests/access-requests.module';
     ReviewModule,
     OversightModule,
     RoleWorkspaceModule,
+    LivelihoodModule,
   ],
 })
 export class AppModule {}

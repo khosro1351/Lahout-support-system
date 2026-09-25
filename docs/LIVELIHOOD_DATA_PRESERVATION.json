@@ -1,0 +1,70 @@
+{
+  "date": "2026-09-25T02:00:04.556Z",
+  "results": [
+    {
+      "table": "identity.people",
+      "existingRows": 44,
+      "status": "PASS"
+    },
+    {
+      "table": "identity.accounts",
+      "existingRows": 17,
+      "status": "PASS"
+    },
+    {
+      "table": "identity.role_assignments",
+      "existingRows": 21,
+      "status": "PASS"
+    },
+    {
+      "table": "organization.groups",
+      "existingRows": 5,
+      "status": "PASS"
+    },
+    {
+      "table": "family.families",
+      "existingRows": 9,
+      "status": "PASS"
+    },
+    {
+      "table": "family.family_memberships",
+      "existingRows": 27,
+      "status": "PASS"
+    },
+    {
+      "table": "family.head_history",
+      "existingRows": 9,
+      "status": "PASS"
+    },
+    {
+      "table": "family.case_profiles",
+      "existingRows": 9,
+      "status": "PASS"
+    },
+    {
+      "table": "family.documents",
+      "existingRows": 10,
+      "status": "PASS"
+    },
+    {
+      "table": "assessment.models",
+      "existingRows": 1,
+      "status": "PASS"
+    },
+    {
+      "table": "assessment.snapshots",
+      "existingRows": 9,
+      "status": "PASS"
+    },
+    {
+      "table": "identity.access_requests",
+      "existingRows": 3,
+      "status": "PASS"
+    },
+    {
+      "table": "identity.access_request_decisions",
+      "existingRows": 3,
+      "status": "PASS"
+    }
+  ]
+}

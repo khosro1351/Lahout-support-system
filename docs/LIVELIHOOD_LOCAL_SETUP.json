@@ -1,0 +1,64 @@
+{
+  "date": "2026-09-25T02:01:40.038Z",
+  "migrations": 11,
+  "families": 50,
+  "accounts": [
+    {
+      "username": "TestV100_Council1"
+    },
+    {
+      "username": "TestV100_Council2"
+    },
+    {
+      "username": "TestV100_Council3"
+    },
+    {
+      "username": "TestV100_Executive"
+    },
+    {
+      "username": "TestV100_Helper1_1"
+    },
+    {
+      "username": "TestV100_Helper1_2"
+    },
+    {
+      "username": "TestV100_Helper2_1"
+    },
+    {
+      "username": "TestV100_Helper2_2"
+    },
+    {
+      "username": "TestV100_Helper3_1"
+    },
+    {
+      "username": "TestV100_Helper3_2"
+    },
+    {
+      "username": "TestV100_Helper4_1"
+    },
+    {
+      "username": "TestV100_Helper4_2"
+    },
+    {
+      "username": "TestV100_Helper5_1"
+    },
+    {
+      "username": "TestV100_Helper5_2"
+    },
+    {
+      "username": "TestV100_Leader1"
+    },
+    {
+      "username": "TestV100_Leader2"
+    },
+    {
+      "username": "TestV100_Leader3"
+    },
+    {
+      "username": "TestV100_Leader4"
+    },
+    {
+      "username": "TestV100_Leader5"
+    }
+  ]
+}

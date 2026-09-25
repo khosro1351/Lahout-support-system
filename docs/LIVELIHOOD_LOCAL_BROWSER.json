@@ -1,0 +1,13 @@
+{
+  "date": "2026-09-25T02:07:11.505Z",
+  "results": [
+    {
+      "name": "TestV100_Leader1 local browser role selection and workspace",
+      "status": "PASS"
+    },
+    {
+      "name": "TestV100_Executive local browser role selection and workspace",
+      "status": "PASS"
+    }
+  ]
+}
