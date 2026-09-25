@@ -7,7 +7,7 @@ export function logicalParent(path:string,role:string){
  if(path.startsWith('/technical/'))return home;
  if(/^\/workspace\/livelihood\/[^/]+$/.test(path))return '/workspace/livelihood';
  if(/^\/workspace\/families\/[^/]+\/assessments$/.test(path))return path.replace(/\/assessments$/,'');
- if(/^\/workspace\/families\/[^/]+$/.test(path))return '/workspace/groups';
+ if(/^\/workspace\/families\/[^/]+$/.test(path))return role==='GROUP_LEADER'?'/leader/families':role==='SUPREME_GUIDE'?'/guide/families':'/workspace/groups';
  if(/^\/workspace\/groups\/[^/]+$/.test(path))return '/workspace/groups';
  if(/^\/workspace\/items\/[^/]+$/.test(path))return '/workspace';
  if(role==='SUPREME_GUIDE'){

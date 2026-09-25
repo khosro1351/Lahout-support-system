@@ -29,6 +29,7 @@ class RoleWorkspaceController {
   const families=groupIds.length?(await this.oversight.families()).filter(f=>groupIds.includes(f.group_id)):[];
   const alerts=can(u,'ALERT','VIEW')?(await this.assessment.alerts({},u)).alerts:[];
   const tasks=can(u,'WORKSPACE','VIEW')?await this.guidance.items(u,{}):{items:[]};
+  if(u.effectiveRole==='GROUP_LEADER'){const assigned=new Set((await this.pool.query('SELECT item_id FROM guidance.recipients WHERE account_id=$1 AND completed_at IS NULL',[u.accountId])).rows.map(r=>r.item_id));tasks.items=tasks.items.filter((i:any)=>assigned.has(i.id));}
   return {metrics:{incomplete:families.filter(f=>f.case_condition==='INCOMPLETE').length,review:families.filter(f=>f.review_required).length},role:u.effectiveRole,label:ROLE_LABELS[u.effectiveRole!],groups,families,alerts,tasks,permissions:GRANTS[u.effectiveRole!],deferred:['تأیید و بازگشت ارزیابی نسخه ۱٫۰۰','اعتبار و انقضای یک‌ساله ارزیابی نسخه ۱٫۰۰','گردش پذیرش و تصمیم شورای کانون','گردش کامل بازدید و مأموریت میدانی']};
  }
 }

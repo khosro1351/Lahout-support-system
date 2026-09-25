@@ -23,8 +23,31 @@ export class LivelihoodService {
  const activeCritical=(await db.query("SELECT subject FROM oversight.alerts WHERE family_id=$1 AND state<>'RESOLVED' AND severity='CRITICAL'",[f.id])).rows.map(a=>a.subject);
  return {activeCritical,family:{id:f.id,version:f.version,code:f.family_code,groupId:f.current_group_id,groupName:f.group_name,neighborhood:f.neighborhood,...f.basic_data},members,documents};}
  async model(db:Pool|PoolClient){return (await db.query("SELECT * FROM assessment.models WHERE version='1.00-LIVELIHOOD'")).rows[0];}
- async list(u:AuthUser){const all=(await this.pool.query(`SELECT f.id,f.family_code,f.current_group_id,g.name AS group_name,(SELECT p.first_name||' '||p.last_name FROM family.head_history h JOIN identity.people p ON p.id=h.person_id WHERE h.family_id=f.id AND h.valid_to IS NULL) AS head_name,r.state,r.id AS review_id FROM family.families f JOIN organization.groups g ON g.id=f.current_group_id LEFT JOIN LATERAL(SELECT * FROM assessment.domain_reviews x WHERE x.family_id=f.id ORDER BY created_at DESC LIMIT 1) r ON true ORDER BY f.family_code`)).rows;
- return {families:all.filter(f=>['SUPREME_GUIDE','EXECUTIVE_MANAGER'].includes(u.effectiveRole??'')||u.roles.some(r=>['GROUP_LEADER','HELPER'].includes(r.roleCode)&&r.scopeId===f.current_group_id))};}
+ async list(u:AuthUser){
+ const scoped=['GROUP_LEADER','HELPER'].includes(u.effectiveRole??'');
+ const scopes=u.roles.filter(r=>r.roleCode===u.effectiveRole&&r.scopeType==='GROUP').map(r=>r.scopeId);
+ const rows=(await this.pool.query(`SELECT f.*,g.code AS group_code,g.name AS group_name,
+ (SELECT p.first_name||' '||p.last_name FROM family.head_history h JOIN identity.people p ON p.id=h.person_id WHERE h.family_id=f.id AND h.valid_to IS NULL) AS head_name,
+ r.state,r.id AS review_id,r.payload,r.updated_at AS review_updated_at,s.snapshot,s.submitted_at,d.valid_until,d.reason
+ FROM family.families f JOIN organization.groups g ON g.id=f.current_group_id
+ LEFT JOIN LATERAL(SELECT * FROM assessment.domain_reviews x WHERE x.family_id=f.id ORDER BY created_at DESC,id DESC LIMIT 1) r ON true
+ LEFT JOIN LATERAL(SELECT * FROM assessment.domain_submissions x WHERE x.review_id=r.id ORDER BY revision DESC LIMIT 1) s ON true
+ LEFT JOIN assessment.domain_decisions d ON d.submission_id=s.id
+ WHERE (NOT $1::boolean OR f.current_group_id=ANY($2::uuid[])) ORDER BY f.family_code`,[scoped,scopes])).rows;
+ const model=await this.model(this.pool),families=[];
+ for(const f of rows){
+ const base=await this.basics(this.pool,f);
+ const frozen=['SUBMITTED','IN_REVIEW','APPROVED'].includes(f.state);
+ const result=u.effectiveRole==='SUPREME_GUIDE'?(f.state==='APPROVED'?f.snapshot?.result:null):frozen?f.snapshot?.result:f.review_id&&model?this.evaluate(f.payload,base,model.definition):null;
+ const expired=f.state==='APPROVED'&&f.valid_until&&new Date(f.valid_until)<new Date();
+ const status=!f.review_id?'NOT_RECORDED':expired?'EXPIRED':f.state==='APPROVED'?'VALID':['SUBMITTED','IN_REVIEW'].includes(f.state)?'PENDING':f.state==='RETURNED'?'RETURNED':f.state==='READY'?'READY':'DRAFT';
+ const alerts=(await this.pool.query("SELECT id,subject,severity,state FROM oversight.alerts WHERE family_id=$1 AND state<>'RESOLVED' ORDER BY created_at DESC",[f.id])).rows;
+ const hasUnknown=(v:any):boolean=>v==='UNKNOWN'||(v!=null&&typeof v==='object'&&Object.values(v).some(hasUnknown));
+ const dataStatus=!f.review_id?'NOT_RECORDED':!result?'UNKNOWN':result.complete?'COMPLETED':hasUnknown(f.payload)?'UNKNOWN':'INCOMPLETE';
+ families.push({data_status:dataStatus,id:f.id,family_code:f.family_code,current_group_id:f.current_group_id,group_code:f.group_code,group_name:f.group_name,head_name:f.head_name,state:f.state,review_id:f.review_id,member_count:base.members.length,status,score:result?.score??null,urgency:result?.urgency??null,complete:result?.complete??false,missing:result?.missing??[],alerts,valid_until:f.valid_until,reason:u.effectiveRole!=='SUPREME_GUIDE'&&f.state==='RETURNED'?f.reason:null,updated_at:f.review_updated_at??f.updated_at,needs_action:['NOT_RECORDED','EXPIRED','RETURNED','INCOMPLETE','READY','DRAFT'].includes(status)});
+ }
+ return {families};
+ }
  async queue(u:AuthUser){if(u.effectiveRole!=='EXECUTIVE_MANAGER')throw new AppError(403,'ROLE','نقش مدیر اجرایی لازم است.');return {items:(await this.pool.query(`SELECT r.id,r.family_id,r.state,f.family_code,g.name AS group_name,s.submitted_at,s.snapshot->'family'->>'headName' AS head_name FROM assessment.domain_reviews r JOIN family.families f ON f.id=r.family_id JOIN organization.groups g ON g.id=f.current_group_id JOIN LATERAL(SELECT * FROM assessment.domain_submissions a WHERE a.review_id=r.id ORDER BY revision DESC LIMIT 1) s ON true WHERE r.state IN ('SUBMITTED','IN_REVIEW') ORDER BY s.submitted_at`)).rows};}
  async workspace(familyId:string,u:AuthUser){const f=await this.access(this.pool,familyId,u),base=await this.basics(this.pool,f),m=await this.model(this.pool);
  const reviews=(await this.pool.query('SELECT * FROM assessment.domain_reviews WHERE family_id=$1 ORDER BY created_at DESC,id',[familyId])).rows;

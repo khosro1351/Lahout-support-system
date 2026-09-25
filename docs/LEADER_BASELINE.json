@@ -1,0 +1,55 @@
+{
+  "baseCommit": "5bdb1226dd165b7f9e367107fc4a43a33b7edd58",
+  "branch": "staging",
+  "baselineSample": {
+    "date": "2026-09-25T14:18:39.190Z",
+    "results": [
+      {
+        "name": "Technical API returns real status/version/time and only five current groups; current/legacy classification and Shahdeh dual roles preserve access guards",
+        "status": "PASS"
+      },
+      {
+        "name": "Both supplied variable Liana and Liana FD WOFF2 fonts load from local assets; Persian digits use the FD face without external font requests",
+        "status": "PASS"
+      },
+      {
+        "name": "Technical dashboard, health and users Home/Back return to technical dashboard; read-only health cards and deferred sidebar are explicit",
+        "status": "PASS"
+      },
+      {
+        "name": "Scoped simulation requires group, shows exactly five options, uses leader Home/parent and exits only through explicit technical return",
+        "status": "PASS"
+      },
+      {
+        "name": "All organizational simulations keep effective-role Home; executive parent and retired-route redirect avoid Forbidden without ending simulation",
+        "status": "PASS"
+      },
+      {
+        "name": "Real leader and executive Home/Back are authorized; direct forbidden technical access still fails and recovery returns to active dashboard",
+        "status": "PASS"
+      },
+      {
+        "name": "Current/legacy tabs, name search and role/group/status/account-type filters work; multi-role badges and empty states are clear",
+        "status": "PASS"
+      },
+      {
+        "name": "Audit displays real technical actor, effective simulated role, event/state/time without leaking credential fields",
+        "status": "PASS"
+      },
+      {
+        "name": "Health fetch failure never renders invented green status and explicit retry restores live checked data",
+        "status": "PASS"
+      },
+      {
+        "name": "All technical pages fit desktop/tablet/mobile with RTL and no JS errors; 50 families/200 members/50 assessments/20 valid snapshots and permission rows unchanged",
+        "status": "PASS"
+      }
+    ]
+  },
+  "reproducedBlankFamily": {
+    "errors": [
+      "Minified React error #31; visit https://react.dev/errors/31?args[]=object%20with%20keys%20%7Bmax%2C%20level%2C%20scope%2C%20score%2C%20missing%2C%20urgency%2C%20complete%2C%20critical%2C%20breakdown%2C%20totalScore%2C%20otherDomains%7D for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    ],
+    "body": ""
+  }
+}
