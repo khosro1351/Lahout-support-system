@@ -21,5 +21,5 @@ class LivelihoodController {
  @Post('submissions/:id/approve') @HttpCode(200) @UseGuards(CsrfGuard) approve(@Param('id') id:string,@Body() b:unknown,@Req() r:AuthenticatedRequest){return this.s.review(id,b,r.user,'approve');}
  @Post('submissions/:id/return') @HttpCode(200) @UseGuards(CsrfGuard) returnReview(@Param('id') id:string,@Body() b:unknown,@Req() r:AuthenticatedRequest){return this.s.review(id,b,r.user,'return');}
 }
-@Module({imports:[AuthModule,GuidanceModule],controllers:[LivelihoodController],providers:[LivelihoodService]})
+@Module({imports:[AuthModule,GuidanceModule],controllers:[LivelihoodController],providers:[LivelihoodService],exports:[LivelihoodService]})
 export class LivelihoodModule{}

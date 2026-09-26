@@ -12,3 +12,30 @@ export function formatPersianDate(value:unknown,withTime=false):string{
  return withTime?date+' - '+parts.hour+':'+parts.minute:date;
 }
 export const formatPersianDateTime=(value:unknown)=>formatPersianDate(value,true);
+
+export const toPersianDigits=(value:string)=>value.replace(/[0-9٠-٩]/g,c=>'۰۱۲۳۴۵۶۷۸۹'['٠١٢٣٤٥٦٧٨٩'.includes(c)?'٠١٢٣٤٥٦٧٨٩'.indexOf(c):Number(c)]);
+const numericCalendar=new Intl.DateTimeFormat('en-US-u-ca-persian-nu-latn',{
+ timeZone:'UTC',year:'numeric',month:'numeric',day:'numeric',
+});
+function calendarKey(day:number){
+ const p=Object.fromEntries(numericCalendar.formatToParts(new Date(day*86400000)).map(x=>[x.type,x.value]));
+ return Number(p.year)*10000+Number(p.month)*100+Number(p.day);
+}
+// Invert the same Intl Persian calendar by searching civil days; round-trip
+// equality rejects overflow days and non-leap Esfand 30 without a second calendar.
+export function parsePersianDate(value:string):string|null{
+ const text=value.trim().replace(/[۰-۹٠-٩]/g,c=>String('۰۱۲۳۴۵۶۷۸۹'.includes(c)?'۰۱۲۳۴۵۶۷۸۹'.indexOf(c):'٠١٢٣٤٥٦٧٨٩'.indexOf(c)));
+ if(!text)return '';
+ const match=/^(\d{4})\/(\d{2})\/(\d{2})$/.exec(text);
+ if(!match)return null;
+ const [,y,m,d]=match,year=Number(y),month=Number(m),day=Number(d);
+ if(year<1||month<1||month>12||day<1||day>31)return null;
+ const target=year*10000+month*100+day;
+ let low=Math.floor(Date.UTC(year+620,0,1)/86400000),high=Math.floor(Date.UTC(year+623,0,1)/86400000);
+ while(low<=high){
+  const middle=Math.floor((low+high)/2),key=calendarKey(middle);
+  if(key===target){const iso=new Date(middle*86400000).toISOString().slice(0,10);return /^\d{4}-\d{2}-\d{2}$/.test(iso)?iso:null;}
+  if(key<target)low=middle+1;else high=middle-1;
+ }
+ return null;
+}

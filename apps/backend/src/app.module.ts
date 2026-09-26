@@ -1,3 +1,4 @@
+import {HealthScreeningModule} from './health-screening/health-screening.module';
 import {LivelihoodModule} from './livelihood/livelihood.module';
 import {RoleWorkspaceModule} from './auth/role-workspace.module';
 import {OversightModule} from './oversight/oversight.module';
@@ -24,6 +25,7 @@ import { AccessRequestsModule } from './access-requests/access-requests.module';
     OversightModule,
     RoleWorkspaceModule,
     LivelihoodModule,
+    HealthScreeningModule,
   ],
 })
 export class AppModule {}

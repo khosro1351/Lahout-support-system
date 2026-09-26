@@ -58,7 +58,7 @@ try {
  assert.equal((await pool.query("SELECT count(*)::int n FROM identity.accounts WHERE username LIKE 'TestV100_%'")).rows[0].n,19);
  assert.equal((await pool.query("SELECT count(*)::int n FROM identity.role_assignments r JOIN identity.accounts a ON a.id=r.account_id WHERE a.username LIKE 'TestV100_%' AND r.role_code='COUNCIL_MEMBER'")).rows[0].n,9);
  assert.deepEqual((await pool.query("SELECT md5(string_agg(to_jsonb(s)::text,'' ORDER BY id)) digest FROM assessment.snapshots s")).rows[0],before);
- pass('Eleven migrations and idempotent development-only seed: exactly 50 families, 5 groups, 19 accounts, 9 council members; previous snapshots preserved');
+ pass('Twelve migrations and idempotent development-only seed: exactly 50 families, 5 groups, 19 accounts, 9 council members; previous snapshots preserved');
  const log=openSync(path.join(out,'backend.log'),'w');server=spawn(process.execPath,['dist/main.js'],{cwd:backend,env,windowsHide:true,stdio:['ignore',log,log]});await waitReady('http://127.0.0.1:3001/api/v1/auth/me',server);
  const post=async(url,body,auth,status=200)=>{const r=await req(url,{...auth,body});assert.equal(r.status,status,JSON.stringify(r.body));return r.body;};
  const get=async(url,auth)=>{const r=await req(url,auth);assert.equal(r.status,200,JSON.stringify(r.body));return r.body;};

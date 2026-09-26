@@ -18,6 +18,7 @@ try{
    if(path==='/api/v1/auth/login'){loggedIn=true;body={user,csrfToken:'test'};}
    else if(path==='/api/v1/auth/me'){status=loggedIn?200:401;body=loggedIn?{user,csrfToken:'test'}:{message:'ورود لازم است'};}
    else if(path==='/api/v1/livelihood/families/'+fixture.id)body=data;
+   else if(path==='/api/v1/health-screening/families/'+fixture.id)body={family:data.family,members:[],status:'NOT_RECORDED'};
    else if(path.includes('notifications'))body={notifications:[],unread:0};
    await route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
   });
@@ -41,9 +42,9 @@ try{
  const original=await page.locator('.livelihood').innerText();
  await nav.getByRole('link',{name:'سلامت و درمان',exact:true}).click();
  await page.waitForURL('**/workspace/health/'+family.id);
- const message=page.getByText('ارزیابی سلامت و درمان این خانواده هنوز تکمیل نشده است.',{exact:true});await message.waitFor();
- assert.equal(await nav.getByRole('link',{name:'سلامت و درمان',exact:true}).getAttribute('aria-current'),'page');
- assert.equal(await page.locator('.guide-content form,.guide-content input,.guide-content button').count(),0);
+ const message=page.getByRole('heading',{name:'غربالگری سلامت اعضای خانواده',exact:true});await message.waitFor();
+ assert.equal(await nav.getByRole('link',{name:/سلامت و درمان/}).getAttribute('aria-current'),'page');
+ assert.equal(await page.getByRole('button',{name:/حذف عضو|افزودن عضو/}).count(),0);
  await page.reload();await message.waitFor();assert.equal(new URL(page.url()).pathname,'/workspace/health/'+family.id);
  assert.equal(await page.locator('html').getAttribute('dir'),'rtl');assert.equal(await nav.getAttribute('dir'),'rtl');
  await nav.getByRole('link',{name:'معیشت و اقتصاد',exact:true}).click();
@@ -55,5 +56,5 @@ try{
   assert.ok((await page.locator('.livelihood').innerText()).includes('۱۴۰۵/۰۷/۰۴ - ۱۴:۳۰'));
  }
  assert.deepEqual(writes,[]);assert.deepEqual(errors,[]);
- console.log('PASS Assessment navigation ('+(mocked?'simulated API/login':'real login')+'): test-leader, two tabs, health skeleton, refresh, RTL, livelihood return, no data writes or browser errors');
+ console.log('PASS Assessment navigation ('+(mocked?'simulated API/login':'real login')+'): test-leader, two tabs, health screening, refresh, RTL, livelihood return, no data writes or browser errors');
 }finally{await browser.close();}
