@@ -9,6 +9,7 @@ import {LivelihoodService} from './livelihood.service';
 class LivelihoodController {
  constructor(private s:LivelihoodService){}
  @Get('families') list(@Req() r:AuthenticatedRequest){return this.s.list(r.user);}
+ @Get('submissions/:id') submission(@Param('id') id:string,@Req() r:AuthenticatedRequest){return this.s.submission(id,r.user);}
  @Get('queue') queue(@Req() r:AuthenticatedRequest){return this.s.queue(r.user);}
  @Get('families/:id') workspace(@Param('id') id:string,@Req() r:AuthenticatedRequest){return this.s.workspace(id,r.user);}
  @Post('families/:id/basic') @HttpCode(200) @UseGuards(CsrfGuard) basic(@Param('id') id:string,@Body() b:unknown,@Req() r:AuthenticatedRequest){return this.s.saveBasics(id,b,r.user);}

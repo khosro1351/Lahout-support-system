@@ -1,0 +1,133 @@
+import {dropTestDatabase} from './database-cleanup.mjs';
+import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+import { spawn, spawnSync } from 'node:child_process';
+import { mkdirSync, writeFileSync, openSync } from 'node:fs';
+import { createHash, randomBytes } from 'node:crypto';
+
+const root = fileURLToPath(new URL('..', import.meta.url));
+const backend = path.join(root, 'apps/backend');
+const require = createRequire(path.join(backend, 'package.json'));
+const { Pool } = require('pg');
+const password = process.env.DEV_SEED_PASSWORD;
+if (!password || !process.env.TEST_DATABASE_ADMIN_URL) throw new Error('Test PostgreSQL URL and seed password required');
+const out = path.join(root, 'test-results/livelihood-vertical');
+mkdirSync(out, { recursive: true });
+const results = [];
+const pass = name => { results.push({ name, status: 'PASS' }); console.log('PASS ' + name); };
+const dbName = 'lahout_test_vertical_' + Date.now();
+const admin = new Pool({ connectionString: process.env.TEST_DATABASE_ADMIN_URL });
+await admin.query(`CREATE DATABASE ${dbName}`);
+const dbUrl = new URL(process.env.TEST_DATABASE_ADMIN_URL); dbUrl.pathname = '/' + dbName;
+const pool = new Pool({ connectionString: dbUrl.href });
+const origin = 'http://127.0.0.1:5174';
+const env = { ...process.env, DATABASE_URL: dbUrl.href, APP_ENV: 'development', BACKEND_PORT: '3001', FRONTEND_ORIGIN: origin, COOKIE_SECURE: 'false', SESSION_TTL_HOURS: '12', DEV_ACCESS_BATCH: 'initial' };
+let server, front, browser;
+function run(script, extra = {}, expected = 0) {
+  const r = spawnSync(process.execPath, [script], { cwd: backend, env: { ...env, ...extra }, windowsHide: true, encoding: 'utf8' });
+  assert.equal(r.status, expected, r.stderr || r.stdout);
+}
+async function waitReady(url, child) {
+  for (let i = 0; i < 300; i++) {
+    if (child.exitCode !== null) throw new Error('Server exited early: ' + child.exitCode);
+    try { await fetch(url, { signal: AbortSignal.timeout(500) }); return; }
+    catch { await new Promise(r => setTimeout(r, 200)); }
+  }
+  throw new Error('Server startup timeout');
+}
+async function stop(child) {
+  if (!child || child.exitCode !== null) return;
+  await new Promise(resolve => { child.once('exit', resolve); child.kill(); });
+}
+async function req(route, { body, cookie, csrf, requestOrigin = origin, method = body === undefined ? 'GET' : 'POST' } = {}) {
+  const headers = { origin: requestOrigin };
+  if (body !== undefined) headers['content-type'] = 'application/json';
+  if (cookie) headers.cookie = cookie;
+  if (csrf) headers['x-csrf-token'] = csrf;
+  const r = await fetch('http://127.0.0.1:3001/api/v1' + route, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+  return { status: r.status, body: await r.json(), cookie: r.headers.get('set-cookie')?.split(';')[0] };
+}
+
+try {
+ run('.tools/scripts/migrate.js');run('.tools/scripts/seed-dev.js');run('.tools/scripts/seed-guide-dev.js');run('.tools/scripts/seed-roles-dev.js');run('.tools/scripts/seed-livelihood-dev.js');run('.tools/scripts/seed-livelihood-scenarios-dev.js');
+ const log=openSync(path.join(out,'backend.log'),'w');server=spawn(process.execPath,['dist/main.js'],{cwd:backend,env,windowsHide:true,stdio:['ignore',log,log]});await waitReady('http://127.0.0.1:3001/api/v1/auth/me',server);
+ const post=async(url,body,auth,status=200)=>{const r=await req(url,{...auth,body});assert.equal(r.status,status,JSON.stringify(r.body));return r.body;};
+ const get=async(url,auth)=>{const r=await req(url,auth);assert.equal(r.status,200,JSON.stringify(r.body));return r.body;};
+ async function login(username,role){const r=await req('/auth/login',{body:{username,password}});assert.equal(r.status,200,JSON.stringify(r.body));const a={cookie:r.cookie,csrf:r.body.csrfToken,user:r.body.user};if(role)await post('/auth/select-role',{roleCode:role},a);return a;}
+ const leader=await login('TestV100_Leader1','GROUP_LEADER'),executive=await login('TestV100_Executive','EXECUTIVE_MANAGER'),guide=await login('Aseman'),tech=await login('TechSupportDev'),helper=await login('TestV100_Helper1_1');
+ const families=(await get('/livelihood/families',leader)).families;
+ const f1=families.find(f=>f.family_code==='HL-TEST-G1-01'),f2=families.find(f=>f.family_code==='HL-TEST-G1-02'),f3=families.find(f=>f.family_code==='HL-TEST-G1-03');
+ const original=(await pool.query("SELECT s.*,to_jsonb(d) decision_record FROM assessment.domain_submissions s JOIN assessment.domain_decisions d ON d.submission_id=s.id WHERE d.decision='APPROVED' ORDER BY s.id")).rows;
+ const good=(await get('/livelihood/families/'+f1.id,leader)).submissions[0].snapshot.payload;
+ async function ready(family){const w=await get('/livelihood/families/'+family.id,leader),source=w.submissions.find(s=>s.decision==='APPROVED')?.snapshot.payload??good;const payload={...source,employment:w.members.map(m=>({memberId:m.id,state:'بدون شغل و درآمد',ability:'ندارد',barrier:'مانع فرضی'})),notes:'جمع‌بندی کامل برای آزمون گردش محلی'};const d=await post('/livelihood/families/'+family.id+'/draft',{version:w.review?.version??0,payload},leader);assert.ok(d.result.complete,JSON.stringify(d.result.missing));return {w,payload,review:d.review};}
+ const {chromium}=createRequire(path.join(root,'package.json'))('playwright');const flog=openSync(path.join(out,'frontend.log'),'w');front=spawn(process.execPath,['tests/preview.mjs'],{cwd:root,env:{...env,PREVIEW_PORT:'5174',BACKEND_PROXY:'http://127.0.0.1:3001'},windowsHide:true,stdio:['ignore',flog,flog]});await waitReady(origin,front);browser=await chromium.launch({headless:true,...(process.env.BROWSER_EXECUTABLE?{executablePath:process.env.BROWSER_EXECUTABLE}:{})});const errors=[];
+ async function browserAs(auth){const c=await browser.newContext({viewport:{width:1440,height:1100}});await c.addCookies([{name:'lahout_session',value:auth.cookie.split('=')[1],url:origin,httpOnly:true,sameSite:'Strict'}]);const p=await c.newPage();p.on('pageerror',e=>errors.push(e.message));return p;}
+ const lp=await browserAs(leader),ep=await browserAs(executive);
+ const shot=async(page,file)=>{await page.evaluate(()=>window.scrollTo(0,0));await page.screenshot({path:path.join(out,file+'.png'),fullPage:true});};
+ const d1=await ready(f1);
+ await lp.goto(origin+'/workspace/livelihood/'+f1.id);await lp.getByRole('button',{name:'معیشت و اقتصاد',exact:true}).click();await lp.getByLabel('جمع‌بندی نهایی سرگروه',{exact:true}).fill('جمع‌بندی تکمیل‌شده در مرورگر برای تأیید مدیر اجرایی');await lp.getByRole('button',{name:'ذخیره و محاسبه',exact:true}).click();await lp.getByRole('status').filter({hasText:'ثبت شد.'}).waitFor();await lp.getByRole('button',{name:'نتیجه و ارسال',exact:true}).click();await lp.getByRole('button',{name:'ارسال برای مدیر اجرایی',exact:true}).click();await lp.getByText('نمای ثابت ارسال',{exact:false}).waitFor();
+ let w=await get('/livelihood/families/'+f1.id,leader);const sub1=w.submissions[0],frozen=structuredClone(sub1.snapshot);assert.equal(w.review.state,'SUBMITTED');assert.equal(frozen.submittedBy,leader.user.accountId);
+ await post('/livelihood/families/'+f1.id+'/draft',{version:w.review.version,payload:d1.payload},leader,409);
+ await post('/livelihood/families/'+f1.id+'/basic',{version:w.family.version,family:w.family,members:w.members},leader,409);
+ await post('/livelihood/families/'+f1.id+'/documents',{name:'late.txt',category:'OTHER',mediaType:'text/plain',content:'WA=='},leader,409);
+ await ep.goto(origin+'/executive/assessments');const queueRow=ep.getByRole('row').filter({hasText:f1.family_code});await queueRow.getByRole('link',{name:'بررسی ارزیابی',exact:true}).waitFor();assert.ok((await queueRow.innerText()).includes('منتظر تأیید'));await shot(ep,'01-executive-queue');await queueRow.getByRole('link').click();await ep.getByRole('heading',{name:'بررسی ارزیابی معیشت',exact:true}).waitFor();assert.equal(await ep.locator('input,select,textarea').count(),0);await ep.getByRole('heading',{name:'خلاصه نسخه معتبر پیشین',exact:true}).waitFor();await shot(ep,'02-executive-review');
+ await ep.getByRole('button',{name:'تأیید ارزیابی',exact:true}).click();await ep.getByText('تأییدکننده:',{exact:false}).waitFor();await ep.reload();await ep.getByText('تأییدکننده:',{exact:false}).waitFor();
+ let approved=(await get('/livelihood/submissions/'+sub1.id,executive)).submission;assert.equal(approved.decision,'APPROVED');assert.equal(approved.snapshot.payload.notes,frozen.payload.notes);assert.deepEqual(approved.snapshot,frozen);assert.equal(approved.snapshot.result.max,30);
+ const exactValidity=(await pool.query("SELECT valid_until=decided_at+interval '1 year' exact FROM assessment.domain_decisions WHERE submission_id=$1",[sub1.id])).rows[0];assert.ok(exactValidity.exact);
+ await lp.goto(origin+'/leader');await lp.getByRole('row').filter({hasText:f1.family_code}).getByText('تأییدشده / معتبر',{exact:true}).waitFor();await shot(lp,'06-leader-valid');await lp.goto(origin+'/workspace/families/'+f1.id);await lp.getByRole('heading',{name:'معیشت و اقتصاد',exact:true}).waitFor();await lp.getByText('تأییدشده / معتبر',{exact:true}).first().waitFor();await shot(lp,'07-family-approved');
+ pass('Scenario 1: real leader browser edits/saves/submits, executive sees exact frozen submission and approves, validity is exactly one calendar year, leader and Family Workspace show valid state');
+ const d2=await ready(f2);await lp.goto(origin+'/workspace/livelihood/'+f2.id);await lp.getByRole('button',{name:'نتیجه و ارسال',exact:true}).click();await lp.getByRole('button',{name:'ارسال برای مدیر اجرایی',exact:true}).click();await lp.getByText('نمای ثابت ارسال',{exact:false}).waitFor();w=await get('/livelihood/families/'+f2.id,leader);const firstReturn=w.submissions[0];
+ await ep.goto(origin+'/executive/assessments/'+firstReturn.id);await ep.getByRole('button',{name:'بازگشت برای تکمیل',exact:true}).click();assert.ok(await ep.getByRole('button',{name:'ثبت بازگشت برای تکمیل',exact:true}).isDisabled());await post('/livelihood/submissions/'+firstReturn.id+'/return',{version:w.review.version,reason:'   '},executive,400);
+ const returnReason='شرح شاهد درآمد و جمع‌بندی درباره هزینه‌های ضروری را تکمیل کنید.';await ep.getByLabel('دلیل بازگشت (الزامی)',{exact:true}).fill(returnReason);await ep.screenshot({path:path.join(out,'04-return-reason.png'),fullPage:false});await ep.getByRole('button',{name:'ثبت بازگشت برای تکمیل',exact:true}).click();await ep.getByText('دلیل بازگشت: '+returnReason,{exact:true}).waitFor();
+ await lp.goto(origin+'/leader?filter=RETURNED');const returnedRow=lp.getByRole('row').filter({hasText:f2.family_code});await returnedRow.getByText('برگشتی برای اصلاح',{exact:true}).waitFor();await returnedRow.getByText('دلیل برگشت',{exact:true}).click();await shot(lp,'05-leader-returned');await lp.goto(origin+'/workspace');await lp.getByText('دلیل برگشت: '+returnReason,{exact:true}).waitFor();
+ await lp.goto(origin+'/workspace/livelihood/'+f2.id);await lp.getByRole('button',{name:'معیشت و اقتصاد',exact:true}).click();await lp.getByLabel('جمع‌بندی نهایی سرگروه',{exact:true}).fill('شرح شاهد درآمد اصلاح شد؛ هزینه‌های ضروری با مصاحبه خانواده تطبیق داده شد.');await lp.getByRole('button',{name:'ذخیره و محاسبه',exact:true}).click();await lp.getByRole('status').filter({hasText:'ثبت شد.'}).waitFor();await lp.getByRole('button',{name:'نتیجه و ارسال',exact:true}).click();await lp.getByRole('button',{name:'ارسال برای مدیر اجرایی',exact:true}).click();await lp.getByText('نمای ثابت ارسال',{exact:false}).waitFor();
+ w=await get('/livelihood/families/'+f2.id,leader);const resub=w.submissions[0];assert.equal(resub.revision,2);assert.equal(w.submissions.find(s=>s.id===firstReturn.id).reason,returnReason);assert.deepEqual(w.submissions.find(s=>s.id===firstReturn.id).snapshot,firstReturn.snapshot);
+ await ep.goto(origin+'/workspace');await ep.getByRole('row').filter({hasText:f2.family_code}).getByText('ارسال مجدد پس از اصلاح',{exact:false}).waitFor();await ep.getByRole('row').filter({hasText:f2.family_code}).getByRole('link',{name:'بررسی ارزیابی',exact:true}).click();await ep.getByRole('button',{name:'تأیید ارزیابی',exact:true}).click();await ep.getByText('تأییدکننده:',{exact:false}).waitFor();
+ const history=(await get('/livelihood/families/'+f2.id,leader)).history;for(const action of ['LIVELIHOOD_SUBMITTED','LIVELIHOOD_RETURNED','LIVELIHOOD_RESUBMITTED','LIVELIHOOD_APPROVED','LIVELIHOOD_SNAPSHOT_VALIDATED'])assert.ok(history.some(h=>h.action===action),action);assert.ok(history.some(h=>h.reason===returnReason));
+ pass('Scenario 2: required return reason, leader dashboard/followups, correction and second submission, executive followup and approval preserve both submissions and full history');
+ const d3=await ready(f3);let saved=await post('/livelihood/families/'+f3.id+'/draft',{version:d3.review.version,payload:{...d3.payload,notes:'داده ناقص',summaries:{...d3.payload.summaries,adequacy:'UNKNOWN'}}},leader);assert.ok(!saved.result.complete);assert.equal(saved.result.score,null);
+ const incomplete=await post('/livelihood/families/'+f3.id+'/submit',{version:saved.review.version},leader,422);assert.ok(incomplete.error.details.includes('جمع‌بندی نهایی سرگروه'));await lp.goto(origin+'/workspace/livelihood/'+f3.id);await lp.getByRole('button',{name:'نتیجه و ارسال',exact:true}).click();assert.ok(await lp.getByRole('button',{name:'ارسال برای مدیر اجرایی',exact:true}).isDisabled());
+ pass('Scenario 3: unknown indicator and incomplete mandatory summary block server submission with exact reasons and disable browser submit');
+ // An invalid historic submission fixture is inserted only into this isolated test database.
+ // The public submit endpoint cannot create it; the cached result deliberately lies.
+ const broken=structuredClone(frozen);broken.family.id=f3.id;broken.family.code=f3.family_code;broken.family.headName=f3.head_name;broken.family.neighborhood='ثبت نشده';broken.members=d3.w.members.map((m,i)=>i?m:{...m,profile_data:{...m.profile_data,education:'UNKNOWN'}});broken.documents=[];broken.payload={...d3.payload,notes:'',summaries:{...d3.payload.summaries,adequacy:'UNKNOWN'}};broken.result.complete=true;
+ const bad=(await pool.query('INSERT INTO assessment.domain_submissions(review_id,revision,snapshot,submitted_by) VALUES($1,1,$2,$3) RETURNING id',[saved.review.id,JSON.stringify(broken),leader.user.accountId])).rows[0];await pool.query("UPDATE assessment.domain_reviews SET state='SUBMITTED',version=version+1 WHERE id=$1",[saved.review.id]);
+ const invalid=await get('/livelihood/submissions/'+bad.id,executive);assert.equal(invalid.result.complete,false);for(const text of ['محله','تصویر کارت ملی سرپرست','جمع‌بندی نهایی سرگروه','کفایت درآمد برای نیازهای پایه'])assert.ok(invalid.result.missing.includes(text),text);assert.ok(invalid.result.missing.some(x=>x.startsWith('وضعیت تحصیل')));
+ const rejected=await post('/livelihood/submissions/'+bad.id+'/approve',{version:invalid.submission.version},executive,422);assert.deepEqual(rejected.error.details,invalid.result.missing);
+ await ep.goto(origin+'/executive/assessments/'+bad.id);await ep.getByText('این ارزیابی هنوز قابل تأیید نیست.',{exact:true}).waitFor();assert.ok(await ep.getByRole('button',{name:'تأیید ارزیابی',exact:true}).isDisabled());await ep.getByRole('heading',{name:'تصمیم مدیر اجرایی',exact:true}).scrollIntoViewIfNeeded();await ep.screenshot({path:path.join(out,'03-approval-disabled.png'),fullPage:false});
+ assert.equal((await pool.query('SELECT count(*)::int n FROM assessment.domain_decisions WHERE submission_id=$1',[bad.id])).rows[0].n,0);
+ pass('Scenario 4: legacy invalid frozen version with forged complete flag is revalidated; base/member/documents/unknown/summary defects disable approval and server bypass returns detailed 422');
+ for(const auth of [executive,guide,helper]){await post('/livelihood/families/'+f3.id+'/draft',{version:invalid.submission.version,payload:d3.payload},auth,403);await post('/livelihood/families/'+f3.id+'/basic',{version:d3.w.family.version,family:d3.w.family,members:d3.w.members},auth,403);await post('/livelihood/families/'+f3.id+'/documents',{name:'no.txt',category:'OTHER',mediaType:'text/plain',content:'WA=='},auth,403);await post('/livelihood/families/'+f3.id+'/submit',{version:invalid.submission.version},auth,403);}
+ await post('/livelihood/submissions/'+bad.id+'/approve',{version:invalid.submission.version,score:0},executive,400);for(const auth of [leader,helper,guide,tech])assert.equal((await req('/livelihood/submissions/'+bad.id,auth)).status,403);
+ await ep.goto(origin+'/workspace/livelihood/'+f3.id);await ep.getByRole('heading',{name:'بررسی ارزیابی معیشت',exact:true}).waitFor();assert.equal(await ep.locator('input,select,textarea').count(),0);
+ pass('Scenario 5: executive/guide/helper cannot edit leader basics, documents, drafts or submit through API; executive paths use read-only review and reject manual score');
+ const preserved=(await pool.query("SELECT s.*,to_jsonb(d) decision_record FROM assessment.domain_submissions s JOIN assessment.domain_decisions d ON d.submission_id=s.id WHERE s.id=ANY($1::uuid[]) ORDER BY s.id",[original.map(s=>s.id)])).rows;assert.deepEqual(preserved,original);
+ await assert.rejects(pool.query("UPDATE assessment.domain_submissions SET snapshot='{}' WHERE id=$1",[sub1.id]));await assert.rejects(pool.query('DELETE FROM assessment.domain_decisions WHERE submission_id=$1',[sub1.id]));await assert.rejects(pool.query("UPDATE assessment.domain_reviews SET payload='{}' WHERE id=$1",[sub1.review_id]));
+ pass('Scenario 6: all 20 prior valid snapshots/decisions are byte-equivalent after new approvals; new approved payload, submissions and decisions remain database-immutable');
+ const events=(await pool.query("SELECT n.*,a.username FROM guidance.notifications n JOIN identity.accounts a ON a.id=n.recipient_id WHERE n.category LIKE 'LIVELIHOOD_%' ORDER BY n.id")).rows;
+ for(const [category,sid,receiver,linkType] of [['SUBMITTED',sub1.id,'TestV100_Executive','LIVELIHOOD_SUBMISSION'],['RETURNED',firstReturn.id,'TestV100_Leader1','LIVELIHOOD_FAMILY'],['RESUBMITTED',resub.id,'TestV100_Executive','LIVELIHOOD_SUBMISSION'],['APPROVED',resub.id,'TestV100_Leader1','LIVELIHOOD_FAMILY']]){const matches=events.filter(n=>n.dedupe_key==='livelihood:'+sid+':'+category);const role=linkType==='LIVELIHOOD_SUBMISSION'?'EXECUTIVE_MANAGER':'GROUP_LEADER';const expected=(await pool.query("SELECT DISTINCT a.username FROM identity.accounts a JOIN identity.role_assignments r ON r.account_id=a.id WHERE a.status='ACTIVE' AND r.role_code=$1 AND r.valid_from<=now() AND (r.valid_to IS NULL OR r.valid_to>now()) AND ($1='EXECUTIVE_MANAGER' OR r.scope_id=$2)",[role,f1.current_group_id])).rows.map(a=>a.username).sort();assert.deepEqual(matches.map(n=>n.username).sort(),expected);assert.ok(matches.some(n=>n.username===receiver));assert.ok(matches.every(n=>n.link_type===linkType));}
+ assert.ok(!events.some(n=>['Aseman','TechSupportDev','TestV100_Helper1_1'].includes(n.username)));await ep.goto(origin+'/workspace/notifications');await ep.getByText('ارزیابی پس از اصلاح مجدداً ارسال شد',{exact:false}).waitFor();await shot(ep,'08-workflow-notifications');
+ pass('Scenario 7: each submit/return/resubmit/approval creates one deduplicated private notification for the correct active role and real linked record, no audit spam');
+ const returnedNotice=events.find(n=>n.dedupe_key==='livelihood:'+firstReturn.id+':RETURNED');await lp.goto(origin+'/workspace/notifications');const notice=lp.locator('article').filter({hasText:returnedNotice.message});await notice.getByRole('button',{name:'خواندم',exact:true}).click();await notice.getByText('خوانده‌شده',{exact:false}).waitFor();await lp.reload();await lp.locator('article').filter({hasText:returnedNotice.message}).getByText('خوانده‌شده',{exact:false}).waitFor();
+ const countBefore=(await get('/workspace/notifications',leader)).notifications.length;await post('/auth/logout',{},leader);const relog=await login('TestV100_Leader1','GROUP_LEADER');const persisted=(await get('/workspace/notifications',relog)).notifications;assert.equal(persisted.length,countBefore);assert.ok(persisted.find(n=>n.id===returnedNotice.id).seen_at);assert.equal(events.length,(await pool.query("SELECT count(*)::int n FROM guidance.notifications WHERE category LIKE 'LIVELIHOOD_%'")).rows[0].n);
+ await post('/auth/select-role',{roleCode:'COUNCIL_MEMBER'},relog);assert.equal((await get('/workspace/notifications',relog)).notifications.filter(n=>n.category.startsWith('LIVELIHOOD_')).length,0);await post('/auth/select-role',{roleCode:'GROUP_LEADER'},relog);
+ pass('Scenario 8: read receipts survive refresh/logout/login and preserve all notifications; multi-role accounts do not see workflow notifications under another effective role');
+ await post('/auth/simulation',{roleCode:'EXECUTIVE_MANAGER'},tech);assert.equal((await req('/technical/status',tech)).status,403);await post('/livelihood/families/'+f3.id+'/draft',{version:invalid.submission.version,payload:{}},tech,403);await post('/livelihood/submissions/'+bad.id+'/return',{version:invalid.submission.version,reason:'اصلاح نقص‌های نسخه آزمایشی'},tech);
+ await post('/auth/simulation/stop',{},tech);await post('/auth/simulation',{roleCode:'GROUP_LEADER',groupId:f3.current_group_id},tech);
+ let sw=await get('/livelihood/families/'+f3.id,tech);const repaired=await post('/livelihood/families/'+f3.id+'/draft',{version:sw.review.version,payload:d3.payload},tech);assert.ok(repaired.result.complete);const simSend=await post('/livelihood/families/'+f3.id+'/submit',{version:repaired.review.version},tech);await post('/auth/simulation/stop',{},tech);await post('/auth/simulation',{roleCode:'EXECUTIVE_MANAGER'},tech);const simReview=await get('/livelihood/submissions/'+simSend.id,tech);await post('/livelihood/submissions/'+simSend.id+'/approve',{version:simReview.submission.version},tech);
+ const audit=(await pool.query("SELECT event_type,actor_account_id,effective_role,simulation FROM admin.audit_events WHERE entity_id=$1 AND actor_account_id=$2 AND event_type IN('GUIDE_LIVELIHOOD_RETURNED','GUIDE_LIVELIHOOD_RESUBMITTED','GUIDE_LIVELIHOOD_APPROVED','GUIDE_LIVELIHOOD_SNAPSHOT_VALIDATED')",[f3.id,tech.user.accountId])).rows;assert.equal(audit.length,4);assert.ok(audit.every(a=>a.simulation));assert.ok(audit.every(a=>a.effective_role===(a.event_type.endsWith('RESUBMITTED')?'GROUP_LEADER':'EXECUTIVE_MANAGER')));await post('/auth/simulation/stop',{},tech);
+ pass('Scenario 9: simulated executive cannot edit leader data or access technical APIs; simulated return/resubmit/approval/snapshot audit records the real technical actor and effective role');
+ const rp=await browserAs(relog),gp=await browserAs(guide),tp=await browserAs(tech);for(const [page,route,title]of [[rp,'/leader','داشبورد سرگروه'],[ep,'/executive','داشبورد مدیر اجرایی'],[gp,'/guide','صفحه اصلی همیار شاهد'],[tp,'/technical','داشبورد فنی']]){await page.goto(origin+route);await page.locator('h1').waitFor();assert.ok(!(await page.locator('h1').innerText()).includes('دسترسی مجاز نیست'));}
+ await ep.goto(origin+'/executive');const preview=ep.locator('section.role-card').filter({has:ep.getByRole('heading',{name:'خانواده‌ها در محدوده نقش فعال',exact:true})});await preview.locator('tbody tr').first().waitFor();assert.equal(await preview.locator('tbody tr').count(),6);await ep.getByRole('link',{name:'مشاهده همه خانواده‌ها ←',exact:true}).click();await ep.getByRole('heading',{name:'پایش ارزیابی خانواده‌ها',exact:true}).waitFor();await ep.locator('tbody tr').first().waitFor();assert.ok(await ep.locator('tbody tr').count()>=50);assert.equal(await ep.getByRole('link',{name:'تکمیل / مشاهده پرونده',exact:true}).count(),0);
+ pass('Scenario 10: leader/executive/guide/technical routes remain authorized, executive preview is six rows and full monitoring list retains all families without edit CTAs');
+ for(const route of ['/executive/assessments','/executive/assessments/'+sub1.id,'/workspace/notifications'])for(const width of [1440,768,390]){await ep.setViewportSize({width,height:1000});await ep.goto(origin+route);await ep.locator('h1').waitFor();await ep.waitForTimeout(250);assert.ok(await ep.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'overflow '+route+' '+width);assert.equal(await ep.locator('.role-shell').getAttribute('dir'),'rtl');}assert.deepEqual(errors,[]);
+ pass('Review, queue and notifications preserve Persian RTL/right sidebar at desktop/tablet/mobile with no JavaScript errors');
+ // Atomicity: a failed notification write must not leave a half-approved version/history.
+ const pending=(await get('/livelihood/queue',executive)).items[0],atomic=await get('/livelihood/submissions/'+pending.submission_id,executive);const beforeAudit=(await pool.query('SELECT count(*)::int n FROM admin.audit_events WHERE entity_id=$1',[pending.family_id])).rows[0].n;
+ await pool.query("CREATE FUNCTION test_fail_workflow_notice() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.category='LIVELIHOOD_APPROVED' THEN RAISE EXCEPTION 'test notification failure'; END IF; RETURN NEW; END $$; CREATE TRIGGER test_workflow_notice BEFORE INSERT ON guidance.notifications FOR EACH ROW EXECUTE FUNCTION test_fail_workflow_notice()");await post('/livelihood/submissions/'+pending.submission_id+'/approve',{version:atomic.submission.version},executive,500);await pool.query('DROP TRIGGER test_workflow_notice ON guidance.notifications; DROP FUNCTION test_fail_workflow_notice()');assert.equal((await get('/livelihood/submissions/'+pending.submission_id,executive)).submission.decision,null);assert.equal((await pool.query('SELECT count(*)::int n FROM admin.audit_events WHERE entity_id=$1',[pending.family_id])).rows[0].n,beforeAudit);
+ pass('Approval, snapshot validity, history/audit and notifications commit atomically; notification failure rolls the entire decision back');
+
+} catch(e){results.push({name:'suite',status:'FAIL',message:e.message});throw e;}
+finally{await browser?.close();await stop(front);await stop(server);await pool.end();await dropTestDatabase(admin,dbName);await admin.end();writeFileSync(path.join(out,'results.json'),JSON.stringify({date:new Date().toISOString(),results},null,2));}

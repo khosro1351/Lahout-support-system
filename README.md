@@ -232,3 +232,5 @@ docs/                     Business Rules و گزارش تثبیت
 پنل پشتیبان فنی، Home/Back نقش فعال، نمایش کاربران جاری/Legacy و فونت‌های محلی Liana تثبیت شده‌اند. جزئیات صفحات، تست‌ها و موارد Deferred در [گزارش UI پنل فنی](docs/TECHNICAL_UI_DELIVERY_FA.md) است. تست اختصاصی: `pnpm.cmd test:technical:ui`؛ Migration جدید لازم نیست.
 
 گزارش تثبیت فضای عملیاتی سرگروه و رفع صفحه سفید پرونده‌ها: [LEADER_WORKSPACE_DELIVERY_FA.md](docs/LEADER_WORKSPACE_DELIVERY_FA.md).
+
+گزارش تکمیل گردش سرگروه تا تأیید مدیر اجرایی: [LIVELIHOOD_VERTICAL_DELIVERY_FA.md](docs/LIVELIHOOD_VERTICAL_DELIVERY_FA.md).

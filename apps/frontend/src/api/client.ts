@@ -10,7 +10,7 @@ export function clearCsrfToken() {
 }
 
 export class ApiError extends Error {
-  constructor(public code: string, message: string, public status: number) {
+  constructor(public code: string, message: string, public status: number, public details?: unknown) {
     super(message);
   }
 }
@@ -30,7 +30,7 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const data = await response.json().catch(() => ({}));
   if (response.status === 401 && path !== '/auth/login') window.dispatchEvent(new Event('session-expired'));
   if (!response.ok) {
-    throw new ApiError(data?.error?.code ?? 'HTTP_ERROR', data?.error?.message ?? 'خطا در ارتباط با سامانه.', response.status);
+    throw new ApiError(data?.error?.code ?? 'HTTP_ERROR', data?.error?.message ?? 'خطا در ارتباط با سامانه.', response.status, data?.error?.details);
   }
   return data as T;
 }

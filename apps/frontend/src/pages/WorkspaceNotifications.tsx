@@ -6,6 +6,8 @@ import {Screen,useData,date,fa} from './GuideWorkspace';
 import {digits} from './vocabulary';
 type Row=Record<string,any>;
 function notificationLink(n:Row,role:string){
+ if(n.link_type==='LIVELIHOOD_SUBMISSION'&&role==='EXECUTIVE_MANAGER')return '/executive/assessments/'+n.link_id;
+ if(n.link_type==='LIVELIHOOD_FAMILY'&&role==='GROUP_LEADER')return '/workspace/livelihood/'+n.link_id;
  const guide=role==='SUPREME_GUIDE',cases=['SUPREME_GUIDE','EXECUTIVE_MANAGER','GROUP_LEADER','HELPER'].includes(role);
  if(n.link_type==='FAMILY'&&cases&&n.link_id)return (guide?'/guide':'/workspace')+'/families/'+n.link_id+(guide?'':'?returnTo='+encodeURIComponent(role==='GROUP_LEADER'?'/workspace':'/workspace/groups'));
  if(n.link_type==='GROUP'&&cases&&n.link_id)return role==='GROUP_LEADER'?'/leader/families':(guide?'/guide':'/workspace')+'/groups/'+n.link_id;

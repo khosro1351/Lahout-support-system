@@ -33,7 +33,8 @@
     "db:seed:livelihood:scenarios:dev": "pnpm db:seed:livelihood:dev && node --env-file=.env apps/backend/.tools/scripts/seed-livelihood-scenarios-dev.js",
     "test:livelihood:seed": "pnpm build:tools && node --env-file=.env scripts/run-regression.mjs livelihoodSeed",
     "test:technical:ui": "pnpm build:tools && node --env-file=.env scripts/run-regression.mjs technicalUi",
-    "test:leader:ui": "pnpm build:tools && node --env-file=.env scripts/run-regression.mjs leaderUi"
+    "test:leader:ui": "pnpm build:tools && node --env-file=.env scripts/run-regression.mjs leaderUi",
+    "test:livelihood:vertical": "pnpm build:tools && node --env-file=.env scripts/run-regression.mjs livelihoodVertical"
   },
   "devDependencies": {
     "playwright": "1.62.1"

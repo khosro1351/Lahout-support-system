@@ -1,0 +1,114 @@
+{
+  "date": "2026-09-26T03:05:13.696Z",
+  "tables": [
+    {
+      "table": "identity.people",
+      "count": 273,
+      "baselineCount": 273,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "identity.accounts",
+      "count": 36,
+      "baselineCount": 36,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "identity.role_assignments",
+      "count": 46,
+      "baselineCount": 46,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "organization.groups",
+      "count": 10,
+      "baselineCount": 10,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "family.families",
+      "count": 59,
+      "baselineCount": 59,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "family.family_memberships",
+      "count": 237,
+      "baselineCount": 237,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "family.head_history",
+      "count": 59,
+      "baselineCount": 59,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "family.documents",
+      "count": 159,
+      "baselineCount": 159,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "family.document_context",
+      "count": 150,
+      "baselineCount": 150,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "assessment.models",
+      "count": 2,
+      "baselineCount": 2,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "assessment.snapshots",
+      "count": 9,
+      "baselineCount": 9,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "assessment.domain_reviews",
+      "count": 50,
+      "baselineCount": 50,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "assessment.domain_submissions",
+      "count": 38,
+      "baselineCount": 38,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "assessment.domain_decisions",
+      "count": 28,
+      "baselineCount": 28,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "guidance.history",
+      "count": 608,
+      "baselineCount": 608,
+      "status": "UNCHANGED"
+    },
+    {
+      "table": "admin.audit_events",
+      "count": 1195,
+      "baselineCount": 1127,
+      "status": "APPENDED_WITH_PRIOR_CONTENT_UNCHANGED"
+    },
+    {
+      "table": "guidance.notifications",
+      "count": 432,
+      "baselineCount": 432,
+      "status": "UNCHANGED"
+    }
+  ],
+  "currentScenarioCounts": {
+    "groups": 5,
+    "families": 50,
+    "members": 200,
+    "reviews": 50,
+    "valid_snapshots": 20
+  }
+}
