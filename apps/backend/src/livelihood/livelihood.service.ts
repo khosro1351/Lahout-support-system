@@ -94,7 +94,7 @@ export class LivelihoodService {
  for(const [key,label] of [['neighborhood','محله'],['residenceType','نوع سکونت'],['formedOn','تاریخ تشکیل/انتقال پرونده'],['source','منبع اطلاعات اولیه']])if(!known(f[key])||key==='formedOn'&&!validDate(f[key]))missing.push(label);
  if(!head)missing.push('سرپرست خانواده');else{if(!known(head.national_id))missing.push('شناسه ملی سرپرست');if(!known(head.mobile))missing.push('شماره تماس');}
  if(!base.members.length)missing.push('اعضای خانواده');
- for(const m of base.members){if(!known(m.first_name)||!known(m.last_name)||!known(m.relationship_code))missing.push('مشخصات عضو');if(!m.birth_date&&!(Number.isInteger(m.profile_data?.age)&&m.profile_data.age>=0&&m.profile_data.age<=130))missing.push('سن/تولد '+m.first_name);for(const k of ['education','health'])if(!known(m.profile_data?.[k]))missing.push((k==='education'?'وضعیت تحصیل ':'وضعیت سلامت مؤثر ')+m.first_name);}
+ for(const m of base.members){if(!known(m.first_name)||!known(m.last_name)||!known(m.relationship_code))missing.push('مشخصات عضو');for(const k of ['education','health'])if(!known(m.profile_data?.[k]))missing.push((k==='education'?'وضعیت تحصیل ':'وضعیت سلامت مؤثر ')+m.first_name);}
  for(const code of ['NATIONAL_CARD','FAMILY_BOOK'])if(!base.documents.some((d:any)=>d.category===code))missing.push(documentKinds[code as keyof typeof documentKinds]);
  for(const [section,fields] of Object.entries(schema)){const rows=p[section];if(!Array.isArray(rows)||!rows.length){missing.push({income:'منابع درآمد (یا ثبت بدون درآمد)',employment:'اشتغال و توان اقتصادی',expenses:'هزینه‌ها و تعهدات',evidence:'شواهد معیشت'}[section]!);continue;}
  rows.forEach((row:any,i:number)=>{for(const field of fields as any[]){const v=row[field.key];if(field.optional)continue;if(field.type==='number'){if(typeof v!=='number'||!Number.isFinite(v)||v<0)missing.push(field.label+' ردیف '+(i+1));}else if(!known(v)||field.options&&!field.options.includes(v)||field.type==='member'&&!base.members.some((m:any)=>m.id===v))missing.push(field.label+' ردیف '+(i+1));}});}
@@ -122,13 +122,13 @@ export class LivelihoodService {
  const old=await this.basics(c,f);for(const m of old.members)if(!members.some((x:any)=>x.id===m.id))throw new AppError(400,'MEMBERS','حذف عضو موجود در این مرحله مجاز نیست.');
  for(const m of members){if(!known(m.first_name)||!known(m.last_name)||!['HEAD','SPOUSE','CHILD','PARENT','SIBLING','OTHER'].includes(m.relationship_code))throw new AppError(400,'MEMBER','نام و نسبت عضو لازم است.');let person=m.id;
  if(person&&!old.members.some((x:any)=>x.id===person))throw new AppError(403,'MEMBER','عضو متعلق به این خانواده نیست.');
- const profile:any=input(m.profile_data??{});if(profile.age!==undefined&&profile.age!==null&&profile.age!==''&&(!Number.isInteger(profile.age)||profile.age<0||profile.age>130))throw new AppError(400,'AGE','سن معتبر نیست.');
+ const profile:any=input(m.profile_data??{});
  if(m.birth_date&&!validDate(m.birth_date))throw new AppError(400,'DATE','تاریخ تولد معتبر نیست.');
  const nid=text(m.national_id,20)||null,mobile=text(m.mobile,20)||null;
  if(nid&&!/^\d{10}$/.test(nid)&&!(f.family_code.startsWith('HL-TEST-')&&/^TEST-[A-Za-z0-9-]+$/.test(nid)))throw new AppError(400,'NATIONAL_ID','کد ملی ۱۰ رقمی یا شناسه TEST برای پرونده آزمایشی لازم است.');
  if(!person)person=(await c.query('INSERT INTO identity.people(first_name,last_name,national_id,mobile,birth_date) VALUES($1,$2,$3,$4,$5) RETURNING id',[text(m.first_name,100),text(m.last_name,100),nid,mobile,m.birth_date||null])).rows[0].id;
  else await c.query('UPDATE identity.people SET first_name=$2,last_name=$3,national_id=$4,mobile=$5,birth_date=$6,updated_at=now() WHERE id=$1',[person,text(m.first_name,100),text(m.last_name,100),nid,mobile,m.birth_date||null]);
- const pd=JSON.stringify({age:profile.age??null,education:text(profile.education),health:text(profile.health),notes:text(profile.notes)});
+ const pd=JSON.stringify({age:old.members.find((previous:any)=>previous.id===m.id)?.profile_data?.age??null,education:text(profile.education),health:text(profile.health),notes:text(profile.notes)});
  if(m.id)await c.query('UPDATE family.family_memberships SET relationship_code=$3,profile_data=$4 WHERE family_id=$1 AND person_id=$2 AND valid_to IS NULL',[familyId,person,m.relationship_code,pd]);else await c.query('INSERT INTO family.family_memberships(family_id,person_id,relationship_code,profile_data) VALUES($1,$2,$3,$4)',[familyId,person,m.relationship_code,pd]);
  if(m.relationship_code==='HEAD'){const h=(await c.query('SELECT person_id FROM family.head_history WHERE family_id=$1 AND valid_to IS NULL',[familyId])).rows[0];if(h?.person_id!==person){await c.query('UPDATE family.head_history SET valid_to=current_date WHERE family_id=$1 AND valid_to IS NULL',[familyId]);await c.query('INSERT INTO family.head_history(family_id,person_id) VALUES($1,$2)',[familyId,person]);}}
  }

@@ -4,3 +4,59 @@
 @media(max-width:450px){.role-choice-grid{grid-template-columns:1fr}.role-stat-grid{gap:10px}.role-stat-grid .role-card>strong{font-size:20px}.role-card>header{flex-wrap:wrap}.role-selection h1{font-size:24px}}
 
 .role-body:has(.role-dashboard) .home-header a,.role-body:has(.role-card) .home-header a{color:#fff}.role-body:has(.role-dashboard) .home-header button,.role-body:has(.role-card) .home-header button{background:#fff;color:#442777;border:1px solid #ded3f2;padding:9px 16px;border-radius:8px}
+
+/* Shared leader workspace styling, reusing the existing purple/neutral palette. */
+.role-shell[data-role="GROUP_LEADER"] .guide-content{max-width:1280px;margin-inline:auto;padding:24px;box-sizing:border-box;width:100%;font-size:15px;line-height:1.8}
+.role-shell[data-role="GROUP_LEADER"] .page-heading{margin:8px 0 24px;padding:0}
+.role-shell[data-role="GROUP_LEADER"] h1{font-size:26px;margin:0}
+.role-shell[data-role="GROUP_LEADER"] h2{font-size:19px;margin:0 0 16px}
+.role-shell[data-role="GROUP_LEADER"] h3{font-size:16px}
+.role-shell[data-role="GROUP_LEADER"] .panel,.role-shell[data-role="GROUP_LEADER"] .role-card{padding:22px;border:1px solid #e7e1ef;border-radius:14px;background:#fff;margin-block:0 16px;box-shadow:none;min-width:0}
+.role-shell[data-role="GROUP_LEADER"] .panel .panel{padding:16px;background:#fcfaff;margin-block:12px}
+.role-shell[data-role="GROUP_LEADER"] .guide-content button{font:inherit;font-size:14px;line-height:1.7;border:1px solid #7045ad;background:#7045ad;color:white;border-radius:9px;padding:9px 18px;cursor:pointer}
+.role-shell[data-role="GROUP_LEADER"] .guide-content button.secondary{background:white;color:#62408b;border-color:#d8cbe8}
+.role-shell[data-role="GROUP_LEADER"] .guide-content button:disabled{opacity:.55;cursor:not-allowed}
+.role-shell[data-role="GROUP_LEADER"] .guide-content :is(button,a,input,select,textarea):focus-visible{outline:3px solid #bca5de;outline-offset:3px}
+.role-shell[data-role="GROUP_LEADER"] .guide-content fieldset{min-width:0;border:0;padding:0;margin:12px 0}
+.role-shell[data-role="GROUP_LEADER"] .guide-content fieldset.lv-row{border:1px solid #e7e1ef;border-radius:12px;padding:18px;background:#fcfaff}
+.role-shell[data-role="GROUP_LEADER"] .guide-content legend{font-size:14px;font-weight:600;color:#665377;padding-inline:6px}
+.role-shell[data-role="GROUP_LEADER"] .guide-content .filter-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 24px;margin:16px 0;align-items:start}
+.role-shell[data-role="GROUP_LEADER"] .guide-content :is(input:not([type=checkbox]):not([type=radio]),select,textarea){box-sizing:border-box;max-width:100%;min-width:0;width:100%;padding:10px 12px;border:1px solid #cfc4dd;border-radius:9px;background:#fff;color:#382b45;font:inherit}
+.role-shell[data-role="GROUP_LEADER"] .guide-content textarea{min-height:92px;resize:vertical}
+.role-shell[data-role="GROUP_LEADER"] .guide-content .guide-field{min-width:0;gap:6px}
+.role-shell[data-role="GROUP_LEADER"] .guide-content :is(td,th){padding:14px 12px;word-break:normal;overflow-wrap:normal}
+.role-shell[data-role="GROUP_LEADER"] .guide-content th{background:#f8f5fc;font-size:13px;color:#665377}
+.role-shell[data-role="GROUP_LEADER"] .guide-content table{width:100%;border-collapse:collapse}
+.role-shell[data-role="GROUP_LEADER"] .guide-content details>summary{padding:8px 0;cursor:pointer;color:#49355f;font-size:15px}
+.role-shell[data-role="GROUP_LEADER"] .family-summary{gap:12px 24px}
+.role-shell[data-role="GROUP_LEADER"] .family-summary p{margin:6px 0}
+.role-shell[data-role="GROUP_LEADER"] .workspace-navigation{padding:10px 24px;background:#f4eff9;border-radius:0 0 12px 12px}
+.domain-tabs{display:flex;gap:8px;padding:6px;background:#eee8f6;border:1px solid #dfd5eb;border-radius:12px;flex-wrap:wrap;margin-block:8px 24px}
+.domain-tabs a{display:flex;align-items:center;gap:10px;text-decoration:none;border-radius:8px;padding:10px 20px;color:#665377;font-weight:600}
+.domain-tabs a.active{background:#7045ad;color:#fff;box-shadow:0 2px 5px #56377922}
+.domain-tabs a small{font-size:12px}
+.workspace-actions{display:flex;flex-wrap:wrap;gap:12px;justify-content:flex-start;align-items:center;padding-top:18px;margin-top:18px;border-top:1px solid #e7e1ef}
+.family-edit-banner{display:flex;flex-direction:column;gap:4px;margin-bottom:20px}
+.family-edit-banner span{font-size:13px;color:#746382}
+.read-only-field{display:grid;gap:6px;padding:6px 0;color:#6b5d7a}
+.read-only-field output{font-size:18px;color:#433050}
+.read-only-field small{font-size:12px}
+.screening-summary table{min-width:780px}
+.screening-summary th:nth-child(2),.screening-summary td:nth-child(2){white-space:nowrap}
+.screening-choices{display:flex;flex-wrap:wrap;gap:12px;padding:12px 0}
+.role-shell[data-role="GROUP_LEADER"] .screening-choices .check-field{display:flex;align-items:center;gap:10px;padding:10px 20px;border:1px solid #ddd2e9;border-radius:10px;margin:0;cursor:pointer}
+.screening-choices .check-field:has(input:checked){background:#f0e8fa;border-color:#9972ca!important}
+.screening-form .workflow-facts{border-top:1px solid #e8e1ef;margin-top:20px;font-size:13px;color:#776687}
+.screening-form{scroll-margin-top:24px}
+.active-filter{display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:10px 14px;background:#f7f3fb;border-radius:10px;color:#665377}
+.role-shell[data-role="GROUP_LEADER"] .guide-content button[aria-pressed=true]{background:#eee4fb;color:#593386;border-color:#a080ca}
+.assessment-readonly dl,.read-only-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 24px;margin:0}
+.assessment-readonly dt,.read-only-grid dt{color:#82738f;font-size:13px}
+.assessment-readonly dd,.read-only-grid dd{margin:4px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.assessment-checks{list-style:none;padding:0;display:grid;gap:10px}
+.section-index{display:flex;flex-wrap:wrap;gap:8px;padding:12px;background:#f8f5fc;border-radius:12px}
+.section-index a{padding:5px 10px;text-decoration:none;color:#654581;font-size:13px}
+.livelihood section[id]{scroll-margin-top:24px}
+@media(min-width:1100px){.role-shell[data-role="GROUP_LEADER"] .family-base .filter-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:650px){.role-shell[data-role="GROUP_LEADER"] .guide-content{padding:16px 10px}.role-shell[data-role="GROUP_LEADER"] .guide-content .filter-grid,.assessment-readonly dl,.read-only-grid{grid-template-columns:1fr}.role-shell[data-role="GROUP_LEADER"] .panel,.role-shell[data-role="GROUP_LEADER"] .role-card{padding:16px}.domain-tabs a{padding:8px 12px}.role-shell[data-role="GROUP_LEADER"] h1{font-size:23px}.screening-choices{gap:8px}}
+.family-view-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px}

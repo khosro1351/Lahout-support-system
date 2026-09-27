@@ -102,6 +102,25 @@ try {
  await post('/livelihood/families/'+family.id+'/documents',{name:'x.pdf',category:'OTHER',mediaType:'application/pdf',content:'WA=='},leader,400);
  await assert.rejects(pool.query("UPDATE family.documents SET name='changed' WHERE id=$1",[doc.id]));
  pass('Scoped evidence upload/download works, wrong content type and foreign family are blocked; document bytes remain immutable');
+
+ // Birth date and manual age are neither prerequisites nor scoring inputs.
+ w=await get('/livelihood/families/'+family.id,leader);
+ const oldManual=w.members.map(m=>m.profile_data.age);
+ await post('/family-workspace/families/'+family.id,{version:w.family.version,family:w.family,members:w.members.map(m=>({...m,birth_date:null}))},leader);
+ await pool.query("UPDATE family.family_memberships SET profile_data=profile_data-'age' WHERE family_id=$1",[family.id]);
+ w=await get('/livelihood/families/'+family.id,leader);
+ const noBirth=await post('/livelihood/families/'+family.id+'/draft',{version:w.review.version,payload},leader);
+ assert.equal(noBirth.result.complete,true);assert.equal(noBirth.result.score,20);
+ const withoutBirthSubmission=await post('/livelihood/families/'+family.id+'/submit',{version:noBirth.review.version},leader);
+ w=await get('/livelihood/families/'+family.id,leader);
+ assert.ok(w.submissions[0].snapshot.members.every(m=>!m.birth_date&&m.profile_data.age===undefined));
+ await post('/livelihood/submissions/'+withoutBirthSubmission.id+'/return',{version:w.review.version,reason:'ادامه سناریوی آزمون'},executive);
+ // Restore only the isolated test fixture; the submitted snapshot stays unchanged.
+ for(let i=0;i<w.members.length;i++)await pool.query("UPDATE family.family_memberships SET profile_data=jsonb_set(profile_data,'{age}',$3::jsonb) WHERE family_id=$1 AND person_id=$2",[family.id,w.members[i].id,JSON.stringify(oldManual[i]??null)]);
+ w=await get('/livelihood/families/'+family.id,leader);
+ await post('/family-workspace/families/'+family.id,{version:w.family.version,family:w.family,members:w.members.map((m,i)=>i===0?{...m,birth_date:'1985-01-01'}:m)},leader);
+ saved=await post('/livelihood/families/'+family.id+'/draft',{version:w.review.version,payload},leader);
+ pass('No birth date and no manual age still allow complete 20/30 livelihood submission; historical null birth snapshot remains immutable');
  const first=await post('/livelihood/families/'+family.id+'/submit',{version:saved.review.version},leader);w=await get('/livelihood/families/'+family.id,leader);
  assert.ok((await get('/livelihood/queue',executive)).items.some(i=>i.family_id===family.id));assert.equal((await get('/livelihood/families/'+family.id,guide)).submissions.length,0);
  await post('/livelihood/families/'+family.id+'/draft',{version:w.review.version,payload},leader,409);

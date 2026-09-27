@@ -145,7 +145,7 @@ try {
  await dateSelect(formed,'1405','07','04');await dateSelect(birth,'1344','02','19');
  await basePanel.getByRole('button',{name:'انصراف از ویرایش',exact:true}).click();
  assert.equal(await basePanel.locator('select').count(),0);assert.ok((await basePanel.innerText()).includes('۱۳۴۴/۰۲/۱۸'));
- await edit.click();await dateSelect(formed,'1405','07','04');await dateSelect(birth,'1344','02','19');
+ await edit.click();await dateSelect(formed,'1405','07','04');await dateSelect(birth,'1344','02','19');await page.screenshot({path:path.join(out,'family-edit.png'),fullPage:false});
  await Promise.all([page.waitForResponse(r=>r.url().endsWith('/family-workspace/families/'+family.id)&&r.request().method()==='POST'&&r.status()===200),basicSave.click()]);
  await edit.waitFor();assert.equal(await basePanel.locator('input,select,textarea').count(),0);
  assert.ok((await basePanel.innerText()).includes('۱۳۴۴/۰۲/۱۹'),await basePanel.innerText());
@@ -155,6 +155,24 @@ try {
  assert.equal((await req('/family-workspace/families/'+family.id,other)).status,403);
  await post('/family-workspace/families/'+family.id,{version:base.family.version,family:base.family,members:base.members.map((m,i)=>i===0?{...m,birth_date:'2025-02-30'}:m)},leader,400);
  pass('Family defaults to read-only; explicit edit/cancel/save; segmented Jalali leap validation, optional clear, current dates after refresh and existing permissions');
+
+ const legacyAge=base.members[0].profile_data.age;
+ await edit.click();
+ const ageOutput=basePanel.getByLabel('سن عضو ۱',{exact:true});
+ assert.equal(await basePanel.getByRole('spinbutton',{name:/سن/}).count(),0);
+ const previousAge=await ageOutput.innerText();
+ await birth.getByRole('combobox',{name:'سال',exact:true}).selectOption('1345');
+ assert.notEqual(await ageOutput.innerText(),previousAge);
+ await birth.getByRole('button',{name:'پاک کردن تاریخ',exact:true}).click();
+ assert.equal(await ageOutput.innerText(),'نامشخص');
+ await basicSave.click();await edit.waitFor();await page.reload();await edit.waitFor();
+ let afterAge=await get('/family-workspace/families/'+family.id,leader);
+ assert.equal(afterAge.members[0].birth_date,null);assert.equal(afterAge.members[0].profile_data.age,legacyAge);
+ await post('/family-workspace/families/'+family.id,{version:afterAge.family.version,family:afterAge.family,members:afterAge.members.map((m,i)=>i===0?{...m,profile_data:{...m.profile_data,age:1}}:m)},leader);
+ assert.equal((await get('/family-workspace/families/'+family.id,leader)).members[0].profile_data.age,legacyAge);
+ await page.reload();await edit.waitFor();assert.ok((await basePanel.innerText()).includes('نامشخص'));
+ pass('Age is derived live and never editable; clearing birth persists unknown current age without changing legacy age, including a forged API age');
+
  const beforeHealth=await digest();
  const nav=page.getByRole('navigation',{name:'حوزه‌های ارزیابی'});assert.equal(await nav.getByRole('link').count(),2);
  await nav.getByRole('link',{name:'سلامت و درمان',exact:true}).click();
@@ -163,7 +181,7 @@ try {
  assert.equal(await page.getByRole('button',{name:/حذف عضو|افزودن عضو/}).count(),0);
  for(let i=0;i<base.members.length;i++){
   const m=base.members[i],panel=page.locator('details[data-member="'+m.id+'"]');
-  await panel.locator('summary').click();
+  await page.locator('tbody tr').nth(i).getByRole('button',{name:'ثبت / ویرایش غربالگری',exact:true}).click();assert.equal(await page.locator('details[data-member][open]').count(),1);
   assert.equal(await panel.locator('input[type=radio]').count(),3);
   assert.equal(await panel.getByRole('radio',{name:'ثبت نشده',exact:true}).count(),0);
   await panel.getByRole('radio',{name:i===0?'ندارد':i===1?'دارد':'نامشخص',exact:true}).check();
@@ -176,7 +194,7 @@ try {
   await panel.getByText('ثبت‌کننده:',{exact:false}).waitFor();
   const metadata=await panel.locator('.workflow-facts').innerText();assert.match(metadata,/[۰-۹]{4}\/[۰-۹]{2}\/[۰-۹]{2}/);assert.doesNotMatch(metadata,/[0-9]{4}-[0-9]{2}/);
  }
- await page.reload();await page.getByRole('heading',{name:'غربالگری سلامت اعضای خانواده',exact:true}).waitFor();
+ await page.screenshot({path:path.join(out,'health-screening.png'),fullPage:false});await page.reload();await page.getByRole('heading',{name:'غربالگری سلامت اعضای خانواده',exact:true}).waitFor();
  assert.ok((await page.locator('tbody tr').first().innerText()).includes('ندارد'));
  assert.ok((await page.locator('tbody tr').nth(1).innerText()).includes('فرم تخصصی نیازمند تکمیل'));
  workspace=await get(url,leader);assert.ok(workspace.members.every(m=>m.screening.notes==='غربالگری مرورگر'));

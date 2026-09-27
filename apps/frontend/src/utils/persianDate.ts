@@ -44,3 +44,13 @@ export function persianMonthLength(year:number,month:number):number{
  for(const day of [31,30,29])if(parsePersianDate(String(year).padStart(4,'0')+'/'+String(month).padStart(2,'0')+'/'+day)!==null)return day;
  return 0;
 }
+
+/** Completed Persian-calendar years; no fallback to a stored manual age. */
+export function ageFromBirthDate(birth:unknown,asOf:unknown=new Date()):string|null{
+ if(!birth)return null;
+ const split=(v:unknown)=>formatPersianDate(v).replace(/[۰-۹]/g,c=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(c))).split('/').map(Number);
+ const b=split(birth),now=split(asOf);
+ if(b.length!==3||now.length!==3||[...b,...now].some(x=>!Number.isFinite(x)))return null;
+ const age=now[0]-b[0]-(now[1]<b[1]||now[1]===b[1]&&now[2]<b[2]?1:0);
+ return age<0?null:toPersianDigits(String(age))+' سال';
+}

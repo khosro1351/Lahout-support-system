@@ -57,4 +57,22 @@ try{
  }
  assert.deepEqual(writes,[]);assert.deepEqual(errors,[]);
  console.log('PASS Assessment navigation ('+(mocked?'simulated API/login':'real login')+'): test-leader, two tabs, health screening, refresh, RTL, livelihood return, no data writes or browser errors');
+ if(mocked){
+  const payload={income:[{amount:1200000,source:'منبع تاریخی'}],employment:[{member:'member-old'}],expenses:[{amount:500000}],evidence:[{date:'2026-09-26',notes:'شاهد تاریخی'}],summaries:{adequacy:'A'},urgency:'NON_URGENT',critical:[],notes:'جمع‌بندی تاریخی',checks:[true]};
+  const schema={income:[{key:'source',label:'منبع'},{key:'amount',label:'مبلغ',type:'number'}],employment:[{key:'member',label:'عضو',type:'member'}],expenses:[{key:'amount',label:'هزینه',type:'number'}],evidence:[{key:'date',label:'تاریخ',type:'date'},{key:'notes',label:'شاهد'}]};
+  const snapshot={family:{code:fixture.family_code},members:[{id:'member-old',first_name:'نام تاریخی',last_name:'عضو',birth_date:null,profile_data:{age:70}}],documents:[],payload,formSchema:{schema,checks:['کنترل تاریخی'],documentKinds:{}},modelDefinition:{indicators:[{key:'adequacy',label:'کفایت درآمد',options:[{code:'A',label:'کافی'}]}]},result:{score:0,breakdown:[],missing:[]}};
+  const record={id:'old-submission',revision:1,submitted_at:'2026-09-26T11:00:00Z',decision:'APPROVED',valid_until:'2027-09-26T11:00:00Z',snapshot};
+  await page.route('**/api/v1/livelihood/families/'+fixture.id,route=>route.fulfill({contentType:'application/json',body:JSON.stringify({family:{code:fixture.family_code},members:[],documents:[],submissions:[record],payload:{},canEdit:true,review:null,history:[]})}));
+  await page.goto(origin+'/workspace/livelihood/'+fixture.id);
+  const history=page.locator('.assessment-readonly');await history.waitFor();
+  assert.equal(await history.locator('input,select,textarea').count(),0);
+  assert.equal(await history.locator(':scope > section').count(),5);
+  for(const value of ['منبع تاریخی','۱٬۲۰۰٬۰۰۰','نام تاریخی عضو','شاهد تاریخی','۱۴۰۵/۰۷/۰۴','کافی','جمع‌بندی تاریخی'])assert.ok((await history.innerText()).includes(value),value);
+  await page.getByText('اطلاعات خانواده در زمان ارسال این نسخه',{exact:true}).click();
+  assert.ok((await page.locator('.family-base-view').innerText()).includes('نامشخص'));
+  assert.ok(!(await page.locator('.family-base-view').innerText()).includes('۷۰'));
+  for(const width of [1440,768,390]){await page.setViewportSize({width,height:900});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'historical overflow '+width);}
+  assert.deepEqual(errors,[]);assert.deepEqual(writes,[]);
+  console.log('PASS Historical UI: five read-only sections preserve snapshot fields, Jalali dates and historical member names; unknown age ignores stored age; desktop/tablet/mobile and zero writes');
+ }
 }finally{await browser.close();}

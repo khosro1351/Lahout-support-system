@@ -27,3 +27,13 @@ console.log('PASS Jalali input: 492 civil-date round trips, leap dates, invalid 
 
 assert.equal(persianMonthLength(1399,12),30);assert.equal(persianMonthLength(1400,12),29);assert.equal(persianMonthLength(1405,6),31);assert.equal(persianMonthLength(1405,7),30);assert.equal(persianMonthLength(1405,13),0);
 console.log('PASS Jalali select days: leap Esfand, month boundaries and invalid month');
+
+import {ageFromBirthDate} from '../apps/frontend/src/utils/persianDate.ts';
+assert.equal(ageFromBirthDate('1965-05-08','2026-05-07'),'۶۰ سال');
+assert.equal(ageFromBirthDate('1965-05-08','2026-05-08'),'۶۱ سال');
+assert.equal(ageFromBirthDate(null,'2026-09-27'),null);
+assert.equal(ageFromBirthDate('bad','2026-09-27'),null);
+assert.equal(ageFromBirthDate('2030-01-01','2026-09-27'),null);
+assert.equal(ageFromBirthDate('2021-03-20','2022-03-20'),'۰ سال');
+assert.equal(ageFromBirthDate('2021-03-20','2022-03-21'),'۱ سال');
+console.log('PASS Derived age: Persian birthday boundaries, leap birthday, missing/future birth and historical reference date');

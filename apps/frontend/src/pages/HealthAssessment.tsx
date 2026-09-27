@@ -14,7 +14,7 @@ const sources={INTERVIEW:'گفت‌وگوی مستند با خانواده',OBSE
 const relations:Record<string,string>={HEAD:'سرپرست',SPOUSE:'همسر',CHILD:'فرزند',PARENT:'والد',SIBLING:'خواهر/برادر',OTHER:'سایر'};
 const question='آیا این عضو در حال حاضر مسئله‌ای در حوزه سلامت دارد که بر زندگی روزمره، هزینه‌های خانواده، نیاز به مراقبت یا پیگیری درمانی او اثر مؤثر داشته باشد؟';
 
-function MemberScreening({member,familyId,refresh}:{member:Member;familyId:string;refresh:()=>void}){
+function MemberScreening({member,familyId,refresh,open,onSelect}:{member:Member;familyId:string;refresh:()=>void;open:boolean;onSelect:(id:string)=>void}){
  const saved=member.screening;
  const [answer,setAnswer]=useState(saved?.answer??''),[source,setSource]=useState(saved?.source??'');
  const [detail,setDetail]=useState(saved?.source_detail??''),[notes,setNotes]=useState(saved?.notes??'');
@@ -27,15 +27,15 @@ function MemberScreening({member,familyId,refresh}:{member:Member;familyId:strin
    setMessage('غربالگری ذخیره شد.');refresh();
   }catch(e){setError((e as Error).message);}finally{setBusy(false);}
  }
- return <details className="panel" data-member={member.id}>
-  <summary>{member.first_name} {member.last_name} — {saved?'ثبت شده':'ثبت نشده'}</summary>
+ return <details className="panel screening-form" data-member={member.id} open={open}>
+  <summary onClick={e=>{e.preventDefault();onSelect(open?'':member.id);}}>{member.first_name} {member.last_name} — {saved?'ثبت شده':'ثبت نشده'}</summary>
   {member.birth_date&&<p>تاریخ تولد: <PersianDate value={member.birth_date}/></p>}
   <form onSubmit={e=>void save(e)}>
-   <fieldset disabled={busy}><legend>{question}</legend>
+   <fieldset className="screening-question" disabled={busy}><legend>{question}</legend><div className="screening-choices">
     {Object.entries(answers).map(([key,label])=><label className="check-field" key={key}>
      <input type="radio" name={'screening-'+member.id} value={key} required checked={answer===key} onChange={()=>{setAnswer(key);setMessage('');}}/>{label}
     </label>)}
-   </fieldset>
+   </div></fieldset>
    {answer==='YES'&&<p className="quiet-state">فرم تخصصی نیازمند تکمیل</p>}
    {answer==='UNKNOWN'&&<p role="status" className="quiet-state">وضعیت نامشخص است؛ برای تکمیل غربالگری نیاز به بررسی دارد.</p>}
    <fieldset disabled={busy}><div className="filter-grid">
@@ -46,7 +46,7 @@ function MemberScreening({member,familyId,refresh}:{member:Member;familyId:strin
     <Field label="توضیح غربالگری (اختیاری)"><textarea maxLength={2000} value={notes} onChange={e=>setNotes(e.target.value)}/></Field>
    </div></fieldset>
    {error&&<p role="alert">{error}</p>}{message&&<p role="status">{message}</p>}
-   <button disabled={busy||!answer||!source||(source==='OTHER'&&!detail.trim())}>ذخیره غربالگری</button>
+   <div className="workspace-actions"><button disabled={busy||!answer||!source||(source==='OTHER'&&!detail.trim())}>ذخیره غربالگری</button></div>
   </form>
   {saved&&<div className="workflow-facts">
    <p>ثبت‌کننده: {saved.creator_name} · زمان ثبت: <PersianDate value={saved.created_at} withTime/></p>
@@ -56,22 +56,22 @@ function MemberScreening({member,familyId,refresh}:{member:Member;familyId:strin
 }
 function LeaderHealthScreening({familyId}:{familyId:string}){
  const {data:loaded,error,refresh}=useData<Workspace>('/health-screening/families/'+familyId);
- const [data,setData]=useState<Workspace|null>(null);
+ const [data,setData]=useState<Workspace|null>(null),[expanded,setExpanded]=useState('');
  useEffect(()=>{if(loaded)setData(loaded);},[loaded]);
- return <Screen title="سلامت و درمان" error={error} loading={!data&&!error}>{data&&!error&&<div dir="rtl">
+ return <Screen title="سلامت و درمان" error={error} loading={!data&&!error}>{data&&!error&&<div className="health-workspace" dir="rtl">
   <AssessmentDomainTabs familyId={familyId} badges={{health:data.status==='NOT_RECORDED'?'ثبت نشده':'در حال تکمیل'}}/>
   <h2>غربالگری سلامت اعضای خانواده</h2>
   <p><bdi>{data.family.code}</bdi></p>
-  <div className="table-scroll"><table><thead><tr><th>نام و نام خانوادگی</th><th>نسبت</th><th>وضعیت غربالگری</th><th>مسئله مؤثر سلامت</th><th>وضعیت فرم تخصصی</th><th>اقدام</th></tr></thead>
+  <div className="panel table-scroll screening-summary"><table><thead><tr><th>نام و نام خانوادگی</th><th>نسبت</th><th>وضعیت غربالگری</th><th>مسئله مؤثر سلامت</th><th>وضعیت فرم تخصصی</th><th>اقدام</th></tr></thead>
    <tbody>{data.members.map(m=><tr key={m.id}>
     <td>{m.first_name} {m.last_name}</td><td>{relations[m.relationship_code]??m.relationship_code}</td>
     <td>{!m.screening?'ثبت نشده':m.screening.answer==='UNKNOWN'?'نامشخص / نیازمند بررسی':'ثبت شده'}</td>
     <td>{m.screening?answers[m.screening.answer as keyof typeof answers]:'—'}</td>
     <td>{m.screening?.answer==='YES'?'فرم تخصصی نیازمند تکمیل':m.screening?.answer==='NO'?'نیاز ندارد':'—'}</td>
-    <td><button className="secondary" onClick={()=>{const el=document.getElementById('screening-'+m.id)?.querySelector('details');if(el){el.open=true;el.querySelector('input')?.focus();}}}>ثبت / ویرایش غربالگری</button></td>
+    <td><button className="secondary" onClick={()=>{setExpanded(m.id);requestAnimationFrame(()=>document.getElementById('screening-'+m.id)?.scrollIntoView({block:'start',behavior:'smooth'}));}}>ثبت / ویرایش غربالگری</button></td>
    </tr>)}</tbody></table></div>
   {!data.members.length&&<p>عضو فعالی در این خانواده ثبت نشده است.</p>}
-  {data.members.map(m=><div id={'screening-'+m.id} key={m.id}><MemberScreening member={m} familyId={familyId} refresh={refresh}/></div>)}
+  {data.members.map(m=><div id={'screening-'+m.id} key={m.id}><MemberScreening member={m} familyId={familyId} refresh={refresh} open={expanded===m.id} onSelect={setExpanded}/></div>)}
  </div>}</Screen>;
 }
 function ExistingHealthPlaceholder({familyId}:{familyId:string}){
