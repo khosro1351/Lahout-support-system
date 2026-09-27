@@ -14,6 +14,7 @@ export const GRANTS:Record<string,Record<string,readonly string[]>>={
 };
 export function can(u:AuthUser,domain:string,action:Action){return !!u.roles.length&&!!u.effectiveRole&&!!GRANTS[u.effectiveRole]?.[domain]?.includes(action);}
 export function permissionFor(controller:string,handler:string,method:string):{domain:string;action:Action}|null{
+ if(controller==='FamilyWorkspaceController')return {domain:'CASE',action:method==='GET'?'VIEW':'UPDATE'};
  if(controller==='HealthScreeningController')return {domain:'ASSESSMENT',action:method==='GET'?'VIEW':'UPDATE'};
  if(controller==='LivelihoodController')return {domain:'LIVELIHOOD',action:method==='GET'?'VIEW':handler==='approve'||handler==='begin'?'APPROVE':handler==='returnReview'?'RETURN_FOR_COMPLETION':handler==='submit'?'SUBMIT':'UPDATE'};
  if(controller==='AuthController')return handler==='guideHome'?{domain:'GUIDANCE',action:'VIEW'}:null;

@@ -21,5 +21,11 @@ class LivelihoodController {
  @Post('submissions/:id/approve') @HttpCode(200) @UseGuards(CsrfGuard) approve(@Param('id') id:string,@Body() b:unknown,@Req() r:AuthenticatedRequest){return this.s.review(id,b,r.user,'approve');}
  @Post('submissions/:id/return') @HttpCode(200) @UseGuards(CsrfGuard) returnReview(@Param('id') id:string,@Body() b:unknown,@Req() r:AuthenticatedRequest){return this.s.review(id,b,r.user,'return');}
 }
-@Module({imports:[AuthModule,GuidanceModule],controllers:[LivelihoodController],providers:[LivelihoodService],exports:[LivelihoodService]})
+@Controller('family-workspace') @UseGuards(SessionGuard)
+class FamilyWorkspaceController {
+ constructor(private s:LivelihoodService){}
+ @Get('families/:id') workspace(@Param('id') id:string,@Req() r:AuthenticatedRequest){return this.s.familyWorkspace(id,r.user);}
+ @Post('families/:id') @HttpCode(200) @UseGuards(CsrfGuard) save(@Param('id') id:string,@Body() b:unknown,@Req() r:AuthenticatedRequest){return this.s.saveBasics(id,b,r.user);}
+}
+@Module({imports:[AuthModule,GuidanceModule],controllers:[LivelihoodController,FamilyWorkspaceController],providers:[LivelihoodService],exports:[LivelihoodService]})
 export class LivelihoodModule{}

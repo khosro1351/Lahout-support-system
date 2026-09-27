@@ -8,7 +8,7 @@ for(const value of [null,undefined,'','invalid'])assert.equal(formatPersianDateT
 assert.doesNotMatch(formatPersianDateTime('2026-09-26T11:00:00Z'),/[0-9]/);
 console.log('PASS Persian date: fixed date/time, Tehran midnight, Date input, empty/invalid, Persian digits');
 
-import {parsePersianDate,toPersianDigits} from '../apps/frontend/src/utils/persianDate.ts';
+import {parsePersianDate,toPersianDigits,persianMonthLength} from '../apps/frontend/src/utils/persianDate.ts';
 assert.equal(parsePersianDate('۱۴۰۵/۰۶/۲۹'),'2026-09-20');
 assert.equal(parsePersianDate('۱۳۴۴/۰۲/۱۸'),'1965-05-08');
 assert.equal(parsePersianDate('1405/07/04'),'2026-09-26');
@@ -24,3 +24,6 @@ for(let year=1900;year<=2100;year+=5)for(let month=0;month<12;month++){
  assert.equal(parsePersianDate(formatPersianDate(iso)),iso);
 }
 console.log('PASS Jalali input: 492 civil-date round trips, leap dates, invalid days, optional empty and Persian/Arabic/Latin digits');
+
+assert.equal(persianMonthLength(1399,12),30);assert.equal(persianMonthLength(1400,12),29);assert.equal(persianMonthLength(1405,6),31);assert.equal(persianMonthLength(1405,7),30);assert.equal(persianMonthLength(1405,13),0);
+console.log('PASS Jalali select days: leap Esfand, month boundaries and invalid month');

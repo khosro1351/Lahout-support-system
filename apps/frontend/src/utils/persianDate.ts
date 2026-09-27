@@ -39,3 +39,8 @@ export function parsePersianDate(value:string):string|null{
  }
  return null;
 }
+export function persianMonthLength(year:number,month:number):number{
+ if(!Number.isInteger(year)||!Number.isInteger(month)||year<1||month<1||month>12)return 0;
+ for(const day of [31,30,29])if(parsePersianDate(String(year).padStart(4,'0')+'/'+String(month).padStart(2,'0')+'/'+day)!==null)return day;
+ return 0;
+}

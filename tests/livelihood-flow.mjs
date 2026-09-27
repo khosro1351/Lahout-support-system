@@ -130,8 +130,38 @@ try {
  pass('Simulation records technical real actor plus effective leader role; all lifecycle actions retain authentic history');
  const {chromium}=createRequire(path.join(root,'package.json'))('playwright');const flog=openSync(path.join(out,'frontend.log'),'w');front=spawn(process.execPath,['tests/preview.mjs'],{cwd:root,env:{...env,PREVIEW_PORT:'5174',BACKEND_PROXY:'http://127.0.0.1:3001'},windowsHide:true,stdio:['ignore',flog,flog]});await waitReady(origin,front);browser=await chromium.launch({headless:true,...(process.env.BROWSER_EXECUTABLE?{executablePath:process.env.BROWSER_EXECUTABLE}:{})});const errors=[];
  async function browserAs(auth){const c=await browser.newContext({viewport:{width:1440,height:1000}});await c.addCookies([{name:'lahout_session',value:auth.cookie.split('=')[1],url:origin,httpOnly:true,sameSite:'Strict'}]);const p=await c.newPage();p.on('pageerror',e=>errors.push(e.message));return p;}
+
+ const currentUrl='/family-workspace/families/'+family.id;
+ let canonical=await get(currentUrl,leader);
+ const previousBirth=canonical.members[0].birth_date;
+ canonical.members[0].birth_date='1986-04-21';
+ const newBase=await post(currentUrl,{version:canonical.family.version,family:canonical.family,members:canonical.members},leader);
+ assert.equal(newBase.members[0].birth_date,'1986-04-21');
+ assert.equal((await get(currentUrl,leader)).members[0].birth_date,'1986-04-21');
+ const history=(await pool.query("SELECT previous_state,new_state FROM guidance.history WHERE entity_id=$1 AND action='LIVELIHOOD_BASE_UPDATED' ORDER BY occurred_at DESC LIMIT 1",[family.id])).rows[0];
+ assert.equal(history.previous_state.members[0].birth_date,previousBirth);assert.equal(history.new_state.members[0].birth_date,'1986-04-21');
+ assert.deepEqual((await get('/livelihood/families/'+family.id,guide)).submissions[0].snapshot,historical.snapshot);
+ const view=await browserAs(leader);
+ await view.goto(origin+'/workspace/families/'+family.id);
+ const baseView=view.getByRole('region',{name:'اطلاعات جاری پرونده',exact:true});await baseView.getByRole('button',{name:'ویرایش اطلاعات پرونده',exact:true}).waitFor();
+ assert.ok((await baseView.innerText()).includes('۱۳۶۵/۰۲/۰۱'));assert.equal(await baseView.locator('input,select,textarea').count(),0);
+ await view.goto(origin+'/workspace/livelihood/'+family.id);
+ await view.getByText('اطلاعات خانواده در زمان ارسال این نسخه',{exact:true}).click();
+ assert.ok((await view.locator('.family-base-view').innerText()).includes('۱۳۶۳/۱۰/۱۱'));
+ await view.getByRole('button',{name:'ایجاد ارزیابی جدید با حفظ نسخه تأییدشده',exact:true}).click();
+ const continueDraft=view.getByRole('button',{name:'ادامه ارزیابی در حال تکمیل',exact:true});
+ await continueDraft.waitFor();await view.reload();await continueDraft.waitFor();
+ assert.equal(await view.getByRole('button',{name:'ایجاد ارزیابی جدید با حفظ نسخه تأییدشده',exact:true}).count(),0);
+ const openDraft=(await get('/livelihood/families/'+family.id,leader)).review;assert.ok(openDraft);
+ await continueDraft.click();await post('/livelihood/families/'+family.id+'/draft',{payload:{},version:0},leader,409);
+ assert.equal((await pool.query("SELECT count(*)::int n FROM assessment.domain_reviews WHERE family_id=$1 AND state<>'APPROVED'",[family.id])).rows[0].n,1);
+ assert.deepEqual((await get('/livelihood/families/'+family.id,guide)).submissions[0].snapshot,historical.snapshot);
+ await view.goto(origin+'/workspace/families/'+family.id);await view.getByRole('link',{name:'ادامه ارزیابی در حال تکمیل',exact:true}).waitFor();
+ await view.context().close();
+ pass('Canonical birth edit is immediately visible and fully audited; approved historical birth stays unchanged; persisted draft resumes after refresh without parallel drafts');
+
  const page=await browserAs(leader);await page.goto(origin+'/workspace/livelihood/'+second.id);await page.getByRole('button',{name:'نتیجه و ارسال',exact:true}).click();assert.equal(await page.getByRole('button',{name:'ارسال برای مدیر اجرایی',exact:true}).isDisabled(),true);
- await page.getByRole('button',{name:'اطلاعات پایه و اعضا',exact:true}).click();await page.getByLabel('محله / محدوده سکونت',{exact:true}).fill('محله تکمیل‌شده مرورگر');await page.getByRole('button',{name:'ذخیره اطلاعات پایه و اعضا',exact:true}).click();await page.getByRole('status').filter({hasText:'ثبت شد.'}).waitFor();
+ await page.getByRole('link',{name:'اطلاعات پایه و اعضای خانواده',exact:true}).click();await page.getByRole('button',{name:'ویرایش اطلاعات پرونده',exact:true}).click();await page.getByLabel('محله / محدوده سکونت',{exact:true}).fill('محله تکمیل‌شده مرورگر');await page.getByRole('button',{name:'ذخیره تغییرات',exact:true}).click();await page.getByRole('status').filter({hasText:'تغییرات پرونده ذخیره شد.'}).waitFor();await page.goto(origin+'/workspace/livelihood/'+second.id);
  await page.getByRole('button',{name:'مدارک پایه',exact:true}).click();await page.getByLabel('عنوان مدرک',{exact:true}).selectOption('OTHER');await page.getByLabel('نام مدرک (برای سایر عنوان را بنویسید)',{exact:true}).fill('شاهد مرورگر.txt');await page.getByLabel('بارگذاری مدرک — حداکثر ۲۵۶ کیلوبایت',{exact:true}).setInputFiles({name:'evidence.txt',mimeType:'text/plain',buffer:Buffer.from('Development browser test evidence')});await page.getByRole('link',{name:'شاهد مرورگر.txt',exact:true}).waitFor();
  await page.getByRole('button',{name:'معیشت و اقتصاد',exact:true}).click();
  const current=await get('/livelihood/families/'+second.id,leader);
