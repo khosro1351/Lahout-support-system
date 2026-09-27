@@ -30,6 +30,8 @@ export class HealthScreeningService {
   const detail=str(b.sourceDetail,500,b.source!=='OTHER'),notes=str(b.notes,2000,true);
   return this.g.tx(u,async c=>{
    await this.family(c,familyId,u);
+   if((await c.query("SELECT 1 FROM assessment.health_reviews WHERE family_id=$1 AND state='SUBMITTED'",[familyId])).rowCount)throw new AppError(409,'LOCKED','نسخه سلامت منتظر تصمیم مدیر اجرایی است.');
+   if((await c.query("SELECT 1 FROM assessment.health_reviews WHERE family_id=$1 AND state='APPROVED' AND NOT EXISTS(SELECT 1 FROM assessment.health_reviews WHERE family_id=$1 AND state IN ('DRAFT','RETURNED'))",[familyId])).rowCount)throw new AppError(409,'DRAFT','برای ویرایش سلامت، ارزیابی جدید را با حفظ نسخه تأییدشده ایجاد کنید.');
    const membership=(await c.query('SELECT id FROM family.family_memberships WHERE family_id=$1 AND person_id=$2 AND valid_to IS NULL FOR UPDATE',[id(familyId),id(memberId)])).rows[0];
    if(!membership)throw new AppError(403,'MEMBER','عضو فعال این خانواده نیست.');
    const old=(await c.query('SELECT * FROM assessment.health_screenings WHERE membership_id=$1 FOR UPDATE',[membership.id])).rows[0];
@@ -39,6 +41,11 @@ export class HealthScreeningService {
     answer=EXCLUDED.answer,source=EXCLUDED.source,source_detail=EXCLUDED.source_detail,notes=EXCLUDED.notes,
     updated_by=EXCLUDED.updated_by,updated_at=now(),version=assessment.health_screenings.version+1 RETURNING *`,
     [membership.id,b.answer,b.source,detail,notes,u.accountId])).rows[0];
+   if(b.answer!=='YES'){
+    const archived=(await c.query('UPDATE assessment.health_forms SET active=false,updated_by=$2,updated_at=now(),version=version+1 WHERE membership_id=$1 AND active RETURNING *',[membership.id,u.accountId])).rows;
+    for(const form of archived)await this.g.history(c,u,'FAMILY',familyId,'HEALTH_SPECIALIZED_ARCHIVED',null,form);
+   }
+   await c.query("UPDATE assessment.health_reviews SET version=version+1,updated_at=now() WHERE family_id=$1 AND state IN ('DRAFT','RETURNED')",[familyId]);
    await this.g.history(c,u,'FAMILY',familyId,'HEALTH_SCREENING_SAVED',old,next);
    return next;
   },false);

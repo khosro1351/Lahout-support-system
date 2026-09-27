@@ -22,9 +22,10 @@ async function bootstrap() {
 
   const fastify = app.getHttpAdapter().getInstance();
   fastify.addHook('onRoute', (route: any) => {
-    if (route.url.startsWith('/api/v1/guide/') || route.url.startsWith('/api/v1/workspace/') || /^\/api\/v1\/(review|verification|cases|monitoring|oversight|shared|livelihood)\//.test(route.url)) route.bodyLimit = 262144;
+    if (route.url.startsWith('/api/v1/guide/') || route.url.startsWith('/api/v1/workspace/') || /^\/api\/v1\/(review|verification|cases|monitoring|oversight|shared|livelihood|health-assessment|family-import)\//.test(route.url)) route.bodyLimit = 262144;
     if (/^\/api\/v1\/shared\/families\/[^/]+\/evidence$/.test(route.url)) route.bodyLimit = 393216;
     if (/^\/api\/v1\/livelihood\/families\/[^/]+\/documents$/.test(route.url)) route.bodyLimit = 393216;
+    if (/^\/api\/v1\/family-import\/groups\/[^/]+\/upload$/.test(route.url)) route.bodyLimit = 2900000;
   });
   fastify.addHook('onRequest', async (request: any, reply: any) => {
     request.requestId = getOrCreateRequestId(request.headers['x-request-id']);

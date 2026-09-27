@@ -18,7 +18,7 @@ try{
    if(path==='/api/v1/auth/login'){loggedIn=true;body={user,csrfToken:'test'};}
    else if(path==='/api/v1/auth/me'){status=loggedIn?200:401;body=loggedIn?{user,csrfToken:'test'}:{message:'ورود لازم است'};}
    else if(path==='/api/v1/livelihood/families/'+fixture.id)body=data;
-   else if(path==='/api/v1/health-screening/families/'+fixture.id)body={family:data.family,members:[],status:'NOT_RECORDED'};
+   else if(path==='/api/v1/health-assessment/families/'+fixture.id)body={family:data.family,members:[],fields:{},result:{score:null},submissions:[],history:[],review:null,canEdit:true};
    else if(path.includes('notifications'))body={notifications:[],unread:0};
    await route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
   });
@@ -36,7 +36,7 @@ try{
  page.on('request',r=>{if(r.url().includes('/api/')&&!['GET','HEAD','OPTIONS'].includes(r.method()))writes.push(r.url());});
  await page.goto(origin+'/workspace/livelihood/'+family.id);
  const nav=page.getByRole('navigation',{name:'حوزه‌های ارزیابی'});
- await nav.waitFor();assert.equal(await nav.getByRole('link').count(),2);
+ await nav.waitFor();assert.equal(await nav.getByRole('link').count(),3);
  assert.equal(await nav.getByRole('link',{name:'معیشت و اقتصاد',exact:true}).getAttribute('aria-current'),'page');
  await page.getByRole('button',{name:'معیشت و اقتصاد',exact:true}).click();
  const original=await page.locator('.livelihood').innerText();
@@ -56,7 +56,7 @@ try{
   assert.ok((await page.locator('.livelihood').innerText()).includes('۱۴۰۵/۰۷/۰۴ - ۱۴:۳۰'));
  }
  assert.deepEqual(writes,[]);assert.deepEqual(errors,[]);
- console.log('PASS Assessment navigation ('+(mocked?'simulated API/login':'real login')+'): test-leader, two tabs, health screening, refresh, RTL, livelihood return, no data writes or browser errors');
+ console.log('PASS Assessment navigation ('+(mocked?'simulated API/login':'real login')+'): test-leader, three active tabs, health screening, refresh, RTL, livelihood return, no data writes or browser errors');
  if(mocked){
   const payload={income:[{amount:1200000,source:'منبع تاریخی'}],employment:[{member:'member-old'}],expenses:[{amount:500000}],evidence:[{date:'2026-09-26',notes:'شاهد تاریخی'}],summaries:{adequacy:'A'},urgency:'NON_URGENT',critical:[],notes:'جمع‌بندی تاریخی',checks:[true]};
   const schema={income:[{key:'source',label:'منبع'},{key:'amount',label:'مبلغ',type:'number'}],employment:[{key:'member',label:'عضو',type:'member'}],expenses:[{key:'amount',label:'هزینه',type:'number'}],evidence:[{key:'date',label:'تاریخ',type:'date'},{key:'notes',label:'شاهد'}]};

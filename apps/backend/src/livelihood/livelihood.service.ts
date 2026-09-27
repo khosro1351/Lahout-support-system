@@ -16,12 +16,14 @@ export class LivelihoodService {
  const f=(await db.query('SELECT f.*,g.name AS group_name FROM family.families f JOIN organization.groups g ON g.id=f.current_group_id WHERE f.id=$1',[id(familyId)])).rows[0];if(!f)throw new AppError(404,'NOT_FOUND','خانواده پیدا نشد.');
  const leader=u.roles.some(r=>r.roleCode==='GROUP_LEADER'&&r.scopeId===f.current_group_id);
  const read=leader||u.roles.some(r=>r.roleCode==='HELPER'&&r.scopeId===f.current_group_id)||['SUPREME_GUIDE','EXECUTIVE_MANAGER'].includes(u.effectiveRole??'');
- if(!read||edit&&!leader)throw new AppError(403,'SCOPE','این خانواده یا عملیات در محدوده نقش فعال نیست.');return f;
+ if(!read||edit&&!leader)throw new AppError(403,'SCOPE','این خانواده یا عملیات در محدوده نقش فعال نیست.');
+ const imported=(await db.query('SELECT i.members_confirmed_at,b.state AS batch_state FROM family_import.families i JOIN family_import.batches b ON b.id=i.batch_id WHERE i.family_id=$1',[familyId])).rows[0];
+ if(edit&&imported?.batch_state==='VOID')throw new AppError(409,'IMPORT_VOID','Batch این پرونده باطل شده و از کار عملیاتی خارج است.');f.imported=imported??null;return f;
  }
  async basics(db:Pool|PoolClient,f:any){const members=(await db.query(`SELECT p.id,p.first_name,p.last_name,p.national_id,p.mobile,to_char(p.birth_date,'YYYY-MM-DD') AS birth_date,m.relationship_code,m.profile_data FROM family.family_memberships m JOIN identity.people p ON p.id=m.person_id WHERE m.family_id=$1 AND m.valid_to IS NULL ORDER BY CASE WHEN m.relationship_code='HEAD' THEN 0 ELSE 1 END,p.created_at,p.id`,[f.id])).rows;
  const documents=(await db.query('SELECT d.id,d.name,d.media_type,c.category FROM family.documents d LEFT JOIN family.document_context c ON c.document_id=d.id WHERE d.family_id=$1 ORDER BY d.id',[f.id])).rows;
  const activeCritical=(await db.query("SELECT subject FROM oversight.alerts WHERE family_id=$1 AND state<>'RESOLVED' AND severity='CRITICAL'",[f.id])).rows.map(a=>a.subject);
- return {activeCritical,family:{id:f.id,version:f.version,code:f.family_code,groupId:f.current_group_id,groupName:f.group_name,neighborhood:f.neighborhood,...f.basic_data},members,documents};}
+ return {activeCritical,family:{id:f.id,version:f.version,code:f.family_code,groupId:f.current_group_id,groupName:f.group_name,neighborhood:f.neighborhood,...f.basic_data,status:f.status,imported:f.imported??null},members,documents};}
  async model(db:Pool|PoolClient){return (await db.query("SELECT * FROM assessment.models WHERE version='1.00-LIVELIHOOD'")).rows[0];}
  async list(u:AuthUser){
  const scoped=['GROUP_LEADER','HELPER'].includes(u.effectiveRole??'');
@@ -33,7 +35,7 @@ export class LivelihoodService {
  LEFT JOIN LATERAL(SELECT * FROM assessment.domain_reviews x WHERE x.family_id=f.id ORDER BY created_at DESC,id DESC LIMIT 1) r ON true
  LEFT JOIN LATERAL(SELECT * FROM assessment.domain_submissions x WHERE x.review_id=r.id ORDER BY revision DESC LIMIT 1) s ON true
  LEFT JOIN assessment.domain_decisions d ON d.submission_id=s.id
- WHERE (NOT $1::boolean OR f.current_group_id=ANY($2::uuid[])) ORDER BY f.family_code`,[scoped,scopes])).rows;
+ WHERE (NOT $1::boolean OR f.current_group_id=ANY($2::uuid[])) AND NOT EXISTS(SELECT 1 FROM family_import.families i JOIN family_import.batches b ON b.id=i.batch_id WHERE i.family_id=f.id AND (b.state='VOID' OR f.status<>'ACTIVE' OR i.members_confirmed_at IS NULL)) ORDER BY f.family_code`,[scoped,scopes])).rows;
  const model=await this.model(this.pool),families=[];
  for(const f of rows){
  const base=await this.basics(this.pool,f);
@@ -116,7 +118,7 @@ export class LivelihoodService {
  if(p.critical!==undefined&&(!Array.isArray(p.critical)||p.critical.some((c:any)=>!criticalOptions.includes(c))))throw new AppError(400,'CRITICAL','نشانه معتبر نیست.');
  if(p.requiredDocumentIds!==undefined&&(!Array.isArray(p.requiredDocumentIds)||p.requiredDocumentIds.length>100||p.requiredDocumentIds.some((v:any)=>typeof v!=='string')))throw new AppError(400,'DOCUMENT','مدرک معتبر نیست.');
  for(const k of ['notes','criticalAction','urgency'])if(p[k]!==undefined&&(typeof p[k]!=='string'||p[k].length>5000))throw new AppError(400,'TEXT','متن معتبر نیست.');return {...emptyPayload(),...p};}
- async familyWorkspace(familyId:string,u:AuthUser){const f=await this.access(this.pool,familyId,u);return {...await this.basics(this.pool,f),canEdit:u.effectiveRole==='GROUP_LEADER'};}
+ async familyWorkspace(familyId:string,u:AuthUser){const f=await this.access(this.pool,familyId,u);return {...await this.basics(this.pool,f),canEdit:u.effectiveRole==='GROUP_LEADER'&&f.imported?.batch_state!=='VOID'};}
  async saveBasics(familyId:string,value:unknown,u:AuthUser){const b=input(value);return this.g.tx(u,async c=>{const f=await this.access(c,familyId,u,true);const locked=(await c.query('SELECT version FROM family.families WHERE id=$1 FOR UPDATE',[familyId])).rows[0];if(b.version!==locked.version)throw new AppError(409,'STALE','اطلاعات خانواده تغییر کرده است. صفحه را تازه کنید.');
  const family=input(b.family),members=b.members;if(!Array.isArray(members)||!members.length||members.length>40||members.some(m=>!m||typeof m!=='object'||Array.isArray(m))||members.filter(m=>m.relationship_code==='HEAD').length!==1)throw new AppError(400,'MEMBERS','یک سرپرست و فهرست اعضای معتبر لازم است.');
  const old=await this.basics(c,f);for(const m of old.members)if(!members.some((x:any)=>x.id===m.id))throw new AppError(400,'MEMBERS','حذف عضو موجود در این مرحله مجاز نیست.');

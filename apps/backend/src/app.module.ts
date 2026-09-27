@@ -1,3 +1,4 @@
+import {FamilyImportModule} from './family-import/family-import.module';
 import {HealthScreeningModule} from './health-screening/health-screening.module';
 import {LivelihoodModule} from './livelihood/livelihood.module';
 import {RoleWorkspaceModule} from './auth/role-workspace.module';
@@ -26,6 +27,7 @@ import { AccessRequestsModule } from './access-requests/access-requests.module';
     RoleWorkspaceModule,
     LivelihoodModule,
     HealthScreeningModule,
+    FamilyImportModule,
   ],
 })
 export class AppModule {}

@@ -175,12 +175,12 @@ try {
  await continueDraft.click();await post('/livelihood/families/'+family.id+'/draft',{payload:{},version:0},leader,409);
  assert.equal((await pool.query("SELECT count(*)::int n FROM assessment.domain_reviews WHERE family_id=$1 AND state<>'APPROVED'",[family.id])).rows[0].n,1);
  assert.deepEqual((await get('/livelihood/families/'+family.id,guide)).submissions[0].snapshot,historical.snapshot);
- await view.goto(origin+'/workspace/families/'+family.id);await view.getByRole('link',{name:'ادامه ارزیابی در حال تکمیل',exact:true}).waitFor();
+ await view.goto(origin+'/workspace/families/'+family.id);await view.getByRole('navigation',{name:'حوزه‌های ارزیابی'}).getByRole('link',{name:'معیشت و اقتصاد',exact:true}).click();await continueDraft.waitFor();
  await view.context().close();
  pass('Canonical birth edit is immediately visible and fully audited; approved historical birth stays unchanged; persisted draft resumes after refresh without parallel drafts');
 
  const page=await browserAs(leader);await page.goto(origin+'/workspace/livelihood/'+second.id);await page.getByRole('button',{name:'نتیجه و ارسال',exact:true}).click();assert.equal(await page.getByRole('button',{name:'ارسال برای مدیر اجرایی',exact:true}).isDisabled(),true);
- await page.getByRole('link',{name:'اطلاعات پایه و اعضای خانواده',exact:true}).click();await page.getByRole('button',{name:'ویرایش اطلاعات پرونده',exact:true}).click();await page.getByLabel('محله / محدوده سکونت',{exact:true}).fill('محله تکمیل‌شده مرورگر');await page.getByRole('button',{name:'ذخیره تغییرات',exact:true}).click();await page.getByRole('status').filter({hasText:'تغییرات پرونده ذخیره شد.'}).waitFor();await page.goto(origin+'/workspace/livelihood/'+second.id);
+ await page.getByRole('navigation',{name:'حوزه‌های ارزیابی'}).getByRole('link',{name:'اطلاعات پایه',exact:true}).click();await page.getByRole('button',{name:'ویرایش اطلاعات پرونده',exact:true}).click();await page.getByLabel('محله / محدوده سکونت',{exact:true}).fill('محله تکمیل‌شده مرورگر');await page.getByRole('button',{name:'ذخیره تغییرات',exact:true}).click();await page.getByRole('status').filter({hasText:'تغییرات پرونده ذخیره شد.'}).waitFor();await page.goto(origin+'/workspace/livelihood/'+second.id);
  await page.getByRole('button',{name:'مدارک پایه',exact:true}).click();await page.getByLabel('عنوان مدرک',{exact:true}).selectOption('OTHER');await page.getByLabel('نام مدرک (برای سایر عنوان را بنویسید)',{exact:true}).fill('شاهد مرورگر.txt');await page.getByLabel('بارگذاری مدرک — حداکثر ۲۵۶ کیلوبایت',{exact:true}).setInputFiles({name:'evidence.txt',mimeType:'text/plain',buffer:Buffer.from('Development browser test evidence')});await page.getByRole('link',{name:'شاهد مرورگر.txt',exact:true}).waitFor();
  await page.getByRole('button',{name:'معیشت و اقتصاد',exact:true}).click();
  const current=await get('/livelihood/families/'+second.id,leader);

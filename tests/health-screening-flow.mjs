@@ -174,7 +174,7 @@ try {
  pass('Age is derived live and never editable; clearing birth persists unknown current age without changing legacy age, including a forged API age');
 
  const beforeHealth=await digest();
- const nav=page.getByRole('navigation',{name:'حوزه‌های ارزیابی'});assert.equal(await nav.getByRole('link').count(),2);
+ const nav=page.getByRole('navigation',{name:'حوزه‌های ارزیابی'});assert.equal(await nav.getByRole('link').count(),3);
  await nav.getByRole('link',{name:'سلامت و درمان',exact:true}).click();
  await page.getByRole('heading',{name:'غربالگری سلامت اعضای خانواده',exact:true}).waitFor();
  assert.equal(await page.locator('tbody tr').count(),base.members.length);
@@ -191,6 +191,7 @@ try {
   if(i===0){assert.equal(await panel.getByRole('button',{name:'ذخیره غربالگری',exact:true}).isDisabled(),true);await panel.getByLabel('توضیح مبنای سایر').fill('بررسی آزمایشی مستند');}
   await panel.getByLabel('توضیح غربالگری (اختیاری)').fill('غربالگری مرورگر');
   await Promise.all([page.waitForResponse(r=>r.url().endsWith('/members/'+m.id)&&r.status()===200),panel.getByRole('button',{name:'ذخیره غربالگری',exact:true}).click()]);
+  await panel.getByText('جزئیات ثبت غربالگری',{exact:true}).click();
   await panel.getByText('ثبت‌کننده:',{exact:false}).waitFor();
   const metadata=await panel.locator('.workflow-facts').innerText();assert.match(metadata,/[۰-۹]{4}\/[۰-۹]{2}\/[۰-۹]{2}/);assert.doesNotMatch(metadata,/[0-9]{4}-[0-9]{2}/);
  }

@@ -1,0 +1,11 @@
+import {useEffect,useState} from 'react';
+import {api} from '../api/client';
+import {Field} from '../pages/GuideWorkspace';
+type Row=Record<string,any>;
+export function HealthSpecialized({member,familyId,fields,documents,refresh}:{member:Row;familyId:string;fields:Record<string,string>;documents:Row[];refresh:()=>void}){
+ const [p,setP]=useState<Row>(member.specialized??{documentIds:[]}),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
+ useEffect(()=>setP(member.specialized??{documentIds:[]}),[member.form_version,member.form_id]);
+ const change=(key:string,v:any)=>setP(old=>({...old,[key]:v}));
+ async function save(e:React.FormEvent){e.preventDefault();setBusy(true);setMessage('');try{await api('/health-assessment/families/'+familyId+'/members/'+member.id,{method:'POST',body:JSON.stringify({version:member.form_version??0,payload:{...p,documentIds:p.documentIds??[]}})});setMessage('فرم تخصصی ذخیره شد.');refresh();}catch(e){setMessage((e as Error).message);}finally{setBusy(false);}}
+ return <section className="health-specialized"><h3>فرم تخصصی سلامت عضو</h3><p>در موارد بدون نیاز، «ندارد» را بنویسید. برای ارسال، شرح هر محور باید تکمیل باشد.</p><form onSubmit={save}><fieldset disabled={busy}><div className="filter-grid">{Object.entries(fields).map(([key,label])=><Field label={label} key={key}><textarea maxLength={2000} value={p[key]??''} onChange={e=>change(key,e.target.value)}/></Field>)}<Field label="هزینه تقریبی درمان (تومان، اختیاری)"><input type="number" min="0" value={p.cost??''} onChange={e=>change('cost',e.target.value===''?null:Number(e.target.value))}/></Field><Field label="توضیحات تکمیلی (اختیاری)"><textarea maxLength={2000} value={p.notes??''} onChange={e=>change('notes',e.target.value)}/></Field></div><fieldset><legend>ارجاع به مدارک موجود پرونده</legend>{documents.map(d=><label className="check-field" key={d.id}><input type="checkbox" checked={p.documentIds?.includes(d.id)??false} onChange={e=>change('documentIds',e.target.checked?[...(p.documentIds??[]),d.id]:(p.documentIds??[]).filter((x:string)=>x!==d.id))}/>{d.name}</label>)}{!documents.length&&<p>مدرکی در پرونده ثبت نشده است.</p>}</fieldset></fieldset><p role="status">{message}</p><div className="workspace-actions"><button disabled={busy}>ذخیره فرم تخصصی</button></div></form></section>;
+}

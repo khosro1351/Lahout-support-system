@@ -60,3 +60,17 @@
 @media(min-width:1100px){.role-shell[data-role="GROUP_LEADER"] .family-base .filter-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:650px){.role-shell[data-role="GROUP_LEADER"] .guide-content{padding:16px 10px}.role-shell[data-role="GROUP_LEADER"] .guide-content .filter-grid,.assessment-readonly dl,.read-only-grid{grid-template-columns:1fr}.role-shell[data-role="GROUP_LEADER"] .panel,.role-shell[data-role="GROUP_LEADER"] .role-card{padding:16px}.domain-tabs a{padding:8px 12px}.role-shell[data-role="GROUP_LEADER"] h1{font-size:23px}.screening-choices{gap:8px}}
 .family-view-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.family-navigation{position:relative;margin-bottom:24px;align-items:stretch;gap:4px}
+.family-navigation>span{display:flex;gap:6px;align-items:center;padding:10px 14px;color:#8c8096;font-size:13px}
+.family-navigation>span small{font-size:10px}
+.assessment-subnav{position:sticky;top:0;z-index:10;background:#f8f5fc;padding:10px;border:1px solid #e7e1ef;border-radius:10px}
+.domain-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.compact-record{border-bottom:1px solid #e7e1ef;padding:6px 0}
+.compact-record>summary{display:flex;gap:16px;flex-wrap:wrap;list-style:revert}
+.compact-record>summary>span:first-child{color:#86748f;font-size:12px}
+.compact-record dl{padding:14px}
+.assessment-summary{border-inline-start:4px solid #7045ad!important}
+.health-specialized{border-top:1px solid #e7e1ef;margin-top:24px;padding-top:20px}
+.guide-content select,.guide-content select option{direction:rtl;background:#fff;color:#382b45;line-height:1.8}
+.guide-content select option:checked{background:#e9def6;color:#392151}
+@media(max-width:900px){.assessment-subnav{top:45px}.family-navigation a{padding:8px 10px}}
