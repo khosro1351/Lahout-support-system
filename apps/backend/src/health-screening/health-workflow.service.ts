@@ -5,7 +5,8 @@ import {LivelihoodService} from '../livelihood/livelihood.service';
 import type {AuthUser} from '../auth/auth.types';
 import {AppError} from '../common/app-error';
 
-export const healthFields:Record<string,string>={problem:'نوع مشکل',description:'شرح مشکل',currentStatus:'وضعیت جاری',impact:'شدت و اثر بر زندگی روزمره',treatmentNeed:'نیاز به درمان / پیگیری',treatmentOngoing:'وضعیت درمان فعلی',treatmentType:'نوع درمان / پیگیری',continuity:'تداوم یا دوره‌ای بودن',costImpact:'وجود و شدت فشار هزینه درمان',access:'دسترسی به درمان، دارو و خدمات',accessBarrier:'مانع یا محدودیت دسترسی'};
+import {healthFields} from './health.schema';
+export {healthFields} from './health.schema';
 const score={score:null,max:20,status:'PENDING_RULES'};
 @Injectable()
 export class HealthWorkflowService {

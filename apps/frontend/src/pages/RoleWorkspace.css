@@ -74,3 +74,32 @@
 .guide-content select,.guide-content select option{direction:rtl;background:#fff;color:#382b45;line-height:1.8}
 .guide-content select option:checked{background:#e9def6;color:#392151}
 @media(max-width:900px){.assessment-subnav{top:45px}.family-navigation a{padding:8px 10px}}
+
+/* Pilot pages share a compact rhythm without changing the global theme. */
+.role-shell[data-role] .role-body .home-layout{padding:16px 24px}
+.role-shell[data-role] .role-body .guide-content{margin:14px auto 0;padding-top:0}
+.role-shell[data-role] .page-heading{margin:8px 0 16px}
+.role-shell[data-role] .page-heading h1{margin:0}
+.role-nav-group{border-top:1px solid #ffffff20;margin-top:4px;padding-top:8px}
+.role-nav-group h2{font-size:12px;color:#bdb5d4;margin:4px 12px}
+.role-nav-group a{margin-inline-start:8px}
+.assessment-header{display:grid;gap:10px;padding:16px 20px}
+.assessment-header>div:first-child{display:flex;align-items:center;flex-wrap:wrap;gap:14px}
+.assessment-header p{margin:0}
+.assessment-summary{padding-block:8px;border-bottom:1px solid #eee7f5}
+.assessment-summary h3{margin:4px 0}
+.assessment-summary .leader-state-strip a{padding:6px 10px;background:#f8f5fc;border-radius:7px}
+.choice-other{display:grid;gap:8px;min-width:0}
+.role-shell .assessment-subnav{flex-wrap:wrap;gap:6px;padding:8px;background:#f8f6fc;z-index:10}
+.role-shell .assessment-subnav button{padding:8px 12px;font-size:13px}
+.role-shell .table-scroll{max-width:100%;overflow-x:auto}
+.role-shell .table-scroll table{min-width:700px}
+@media(max-width:650px){
+ .role-shell[data-role] .role-body .home-layout{padding:10px}
+ .role-shell[data-role] .role-body .guide-content{margin-top:10px;padding-inline:0}
+ .role-shell .assessment-subnav{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start}
+ .role-shell .assessment-subnav button{white-space:nowrap;flex-shrink:0}
+ .assessment-header{padding:14px}
+}
+
+.role-shell .livelihood>*{min-width:0}

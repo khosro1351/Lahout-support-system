@@ -1,7 +1,8 @@
+import {healthFields} from '../health-screening/health.schema';
 import {Inject,Injectable} from '@nestjs/common';
 import {Pool,PoolClient} from 'pg';
 import {PG_POOL} from '../database/database.constants';
-import {GuidanceService,id,input} from '../guidance/guidance.service';
+import {GuidanceService,id,input,str} from '../guidance/guidance.service';
 import {recheckContext} from '../auth/role-context';
 import type {AuthUser} from '../auth/auth.types';
 import {AppError} from '../common/app-error';
@@ -18,26 +19,32 @@ export class LivelihoodService {
  const read=leader||u.roles.some(r=>r.roleCode==='HELPER'&&r.scopeId===f.current_group_id)||['SUPREME_GUIDE','EXECUTIVE_MANAGER'].includes(u.effectiveRole??'');
  if(!read||edit&&!leader)throw new AppError(403,'SCOPE','این خانواده یا عملیات در محدوده نقش فعال نیست.');
  const imported=(await db.query('SELECT i.members_confirmed_at,b.state AS batch_state FROM family_import.families i JOIN family_import.batches b ON b.id=i.batch_id WHERE i.family_id=$1',[familyId])).rows[0];
- if(edit&&imported?.batch_state==='VOID')throw new AppError(409,'IMPORT_VOID','Batch این پرونده باطل شده و از کار عملیاتی خارج است.');f.imported=imported??null;return f;
+ if(edit&&imported?.batch_state==='VOID')throw new AppError(409,'IMPORT_VOID','Batch این پرونده باطل شده و از کار عملیاتی خارج است.');f.imported=imported?{...imported,transferred_at:f.created_at}:null;return f;
  }
  async basics(db:Pool|PoolClient,f:any){const members=(await db.query(`SELECT p.id,p.first_name,p.last_name,p.national_id,p.mobile,to_char(p.birth_date,'YYYY-MM-DD') AS birth_date,m.relationship_code,m.profile_data FROM family.family_memberships m JOIN identity.people p ON p.id=m.person_id WHERE m.family_id=$1 AND m.valid_to IS NULL ORDER BY CASE WHEN m.relationship_code='HEAD' THEN 0 ELSE 1 END,p.created_at,p.id`,[f.id])).rows;
  const documents=(await db.query('SELECT d.id,d.name,d.media_type,c.category FROM family.documents d LEFT JOIN family.document_context c ON c.document_id=d.id WHERE d.family_id=$1 ORDER BY d.id',[f.id])).rows;
  const activeCritical=(await db.query("SELECT subject FROM oversight.alerts WHERE family_id=$1 AND state<>'RESOLVED' AND severity='CRITICAL'",[f.id])).rows.map(a=>a.subject);
- return {activeCritical,family:{id:f.id,version:f.version,code:f.family_code,groupId:f.current_group_id,groupName:f.group_name,neighborhood:f.neighborhood,...f.basic_data,status:f.status,imported:f.imported??null},members,documents};}
+ return {activeCritical,family:{id:f.id,version:f.version,code:f.family_code,groupId:f.current_group_id,groupName:f.group_name,neighborhood:f.neighborhood,...f.basic_data,...(f.imported?{formedOn:new Date(f.created_at).toISOString().slice(0,10)}:{}),status:f.status,imported:f.imported??null},members,documents};}
  async model(db:Pool|PoolClient){return (await db.query("SELECT * FROM assessment.models WHERE version='1.00-LIVELIHOOD'")).rows[0];}
- async list(u:AuthUser){
+ async list(u:AuthUser,allFamilies=false){
  const scoped=['GROUP_LEADER','HELPER'].includes(u.effectiveRole??'');
  const scopes=u.roles.filter(r=>r.roleCode===u.effectiveRole&&r.scopeType==='GROUP').map(r=>r.scopeId);
  const rows=(await this.pool.query(`SELECT f.*,g.code AS group_code,g.name AS group_name,
  (SELECT p.first_name||' '||p.last_name FROM family.head_history h JOIN identity.people p ON p.id=h.person_id WHERE h.family_id=f.id AND h.valid_to IS NULL) AS head_name,
+ i.members_confirmed_at,i.family_id AS imported_id,b.state AS batch_state,h.state AS health_state,h.updated_at AS health_updated_at,hc.complete AS health_complete,hd.reason AS health_reason,
  r.state,r.id AS review_id,r.payload,r.updated_at AS review_updated_at,s.snapshot,s.submitted_at,d.valid_until,d.reason
  FROM family.families f JOIN organization.groups g ON g.id=f.current_group_id
  LEFT JOIN LATERAL(SELECT * FROM assessment.domain_reviews x WHERE x.family_id=f.id ORDER BY created_at DESC,id DESC LIMIT 1) r ON true
  LEFT JOIN LATERAL(SELECT * FROM assessment.domain_submissions x WHERE x.review_id=r.id ORDER BY revision DESC LIMIT 1) s ON true
  LEFT JOIN assessment.domain_decisions d ON d.submission_id=s.id
- WHERE (NOT $1::boolean OR f.current_group_id=ANY($2::uuid[])) AND NOT EXISTS(SELECT 1 FROM family_import.families i JOIN family_import.batches b ON b.id=i.batch_id WHERE i.family_id=f.id AND (b.state='VOID' OR f.status<>'ACTIVE' OR i.members_confirmed_at IS NULL)) ORDER BY f.family_code`,[scoped,scopes])).rows;
+ LEFT JOIN family_import.families i ON i.family_id=f.id LEFT JOIN family_import.batches b ON b.id=i.batch_id
+ LEFT JOIN LATERAL(SELECT state,updated_at FROM assessment.health_reviews hr WHERE hr.family_id=f.id ORDER BY created_at DESC,id DESC LIMIT 1) h ON true
+ LEFT JOIN LATERAL(SELECT count(*)>0 AND bool_and(COALESCE(hs.answer='NO' OR (hs.answer='YES' AND hf.id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM unnest($4::text[]) k WHERE COALESCE(btrim(hf.payload->>k),'')='')),false)) AS complete FROM family.family_memberships hm LEFT JOIN assessment.health_screenings hs ON hs.membership_id=hm.id LEFT JOIN assessment.health_forms hf ON hf.membership_id=hm.id AND hf.active WHERE hm.family_id=f.id AND hm.valid_to IS NULL) hc ON true
+ LEFT JOIN LATERAL(SELECT d.reason FROM assessment.health_decisions d JOIN assessment.health_submissions s ON s.id=d.submission_id JOIN assessment.health_reviews r ON r.id=s.review_id WHERE r.family_id=f.id ORDER BY d.decided_at DESC LIMIT 1) hd ON true
+ WHERE (NOT $1::boolean OR f.current_group_id=ANY($2::uuid[])) AND ($3::boolean OR (f.status='ACTIVE' AND COALESCE(b.state,'')<>'VOID' AND (i.family_id IS NULL OR i.members_confirmed_at IS NOT NULL))) ORDER BY f.family_code`,[scoped,scopes,allFamilies,Object.keys(healthFields)])).rows;
  const model=await this.model(this.pool),families=[];
  for(const f of rows){
+ f.imported=f.imported_id?{members_confirmed_at:f.members_confirmed_at,batch_state:f.batch_state,transferred_at:f.created_at}:null;
  const base=await this.basics(this.pool,f);
  const frozen=['SUBMITTED','IN_REVIEW','APPROVED'].includes(f.state);
  const result=u.effectiveRole==='SUPREME_GUIDE'?(f.state==='APPROVED'?f.snapshot?.result:null):frozen?f.snapshot?.result:f.review_id&&model?this.evaluate(f.payload,base,model.definition):null;
@@ -46,7 +53,7 @@ export class LivelihoodService {
  const alerts=(await this.pool.query("SELECT id,subject,severity,state FROM oversight.alerts WHERE family_id=$1 AND state<>'RESOLVED' ORDER BY created_at DESC",[f.id])).rows;
  const hasUnknown=(v:any):boolean=>v==='UNKNOWN'||(v!=null&&typeof v==='object'&&Object.values(v).some(hasUnknown));
  const dataStatus=!f.review_id?'NOT_RECORDED':!result?'UNKNOWN':result.complete?'COMPLETED':hasUnknown(f.payload)?'UNKNOWN':'INCOMPLETE';
- families.push({data_status:dataStatus,id:f.id,family_code:f.family_code,current_group_id:f.current_group_id,group_code:f.group_code,group_name:f.group_name,head_name:f.head_name,state:f.state,review_id:f.review_id,member_count:base.members.length,status,score:result?.score??null,urgency:result?.urgency??null,complete:result?.complete??false,missing:result?.missing??[],alerts,valid_until:f.valid_until,reason:u.effectiveRole!=='SUPREME_GUIDE'&&f.state==='RETURNED'?f.reason:null,updated_at:f.review_updated_at??f.updated_at,needs_action:['NOT_RECORDED','EXPIRED','RETURNED','INCOMPLETE','READY','DRAFT'].includes(status)});
+ families.push({family_status:f.status,imported:f.imported,health_status:f.health_state==='DRAFT'&&f.health_complete?'READY':f.health_state??'NOT_RECORDED',health_reason:u.effectiveRole==='GROUP_LEADER'&&f.health_state==='RETURNED'?f.health_reason:null,health_complete:!!f.health_complete,health_updated_at:f.health_updated_at,data_status:dataStatus,id:f.id,family_code:f.family_code,current_group_id:f.current_group_id,group_code:f.group_code,group_name:f.group_name,head_name:f.head_name,state:f.state,review_id:f.review_id,member_count:base.members.length,status,score:result?.score??null,urgency:result?.urgency??null,complete:result?.complete??false,missing:result?.missing??[],alerts,valid_until:f.valid_until,reason:u.effectiveRole!=='SUPREME_GUIDE'&&f.state==='RETURNED'?f.reason:null,updated_at:[f.review_updated_at,f.updated_at,f.health_updated_at].filter(Boolean).sort((a,b)=>new Date(b).getTime()-new Date(a).getTime())[0],needs_action:['NOT_RECORDED','EXPIRED','RETURNED','INCOMPLETE','READY','DRAFT'].includes(status)});
  }
  return {families};
  }
@@ -77,7 +84,8 @@ export class LivelihoodService {
  const latest=(await this.pool.query('SELECT id FROM assessment.domain_submissions WHERE review_id=$1 ORDER BY revision DESC LIMIT 1',[s.review_id])).rows[0];
  const previous=(await this.pool.query(`SELECT s.id,s.snapshot->'result' AS result,d.decided_at,d.valid_until FROM assessment.domain_submissions s JOIN assessment.domain_reviews r ON r.id=s.review_id JOIN assessment.domain_decisions d ON d.submission_id=s.id WHERE r.family_id=$1 AND d.decision='APPROVED' AND d.decided_at<$2 ORDER BY d.decided_at DESC LIMIT 1`,[s.family_id,s.submitted_at])).rows[0]??null;
  const history=(await this.pool.query(`SELECT h.action,h.reason,h.occurred_at,h.effective_role,h.simulation,p.first_name||' '||p.last_name AS actor_name FROM guidance.history h LEFT JOIN identity.accounts a ON a.id=h.actor_id LEFT JOIN identity.people p ON p.id=a.person_id WHERE h.entity_type='FAMILY' AND h.entity_id=$1 AND h.action LIKE 'LIVELIHOOD_%' AND (h.new_state->>'id'=$2 OR h.new_state->>'reviewId'=$2 OR h.new_state->>'submissionId' IN(SELECT id::text FROM assessment.domain_submissions WHERE review_id=$2::uuid)) ORDER BY h.occurred_at DESC,h.id DESC`,[s.family_id,s.review_id])).rows;
- return {submission:s,result:this.submissionResult(s.snapshot),canDecide:latest.id===s.id&&!s.decision&&['SUBMITTED','IN_REVIEW'].includes(s.state),previous,history};
+ const currentFamily=(await this.pool.query('SELECT status FROM family.families WHERE id=$1',[s.family_id])).rows[0];
+ return {currentFamilyStatus:currentFamily.status,submission:s,result:this.submissionResult(s.snapshot),canDecide:latest.id===s.id&&!s.decision&&['SUBMITTED','IN_REVIEW'].includes(s.state),previous,history};
  }
  async workflowNotify(c:PoolClient,f:any,submissionId:string,event:string){
  const receiving=event==='SUBMITTED'||event==='RESUBMITTED'?'EXECUTIVE_MANAGER':'GROUP_LEADER';
@@ -118,7 +126,17 @@ export class LivelihoodService {
  if(p.critical!==undefined&&(!Array.isArray(p.critical)||p.critical.some((c:any)=>!criticalOptions.includes(c))))throw new AppError(400,'CRITICAL','نشانه معتبر نیست.');
  if(p.requiredDocumentIds!==undefined&&(!Array.isArray(p.requiredDocumentIds)||p.requiredDocumentIds.length>100||p.requiredDocumentIds.some((v:any)=>typeof v!=='string')))throw new AppError(400,'DOCUMENT','مدرک معتبر نیست.');
  for(const k of ['notes','criticalAction','urgency'])if(p[k]!==undefined&&(typeof p[k]!=='string'||p[k].length>5000))throw new AppError(400,'TEXT','متن معتبر نیست.');return {...emptyPayload(),...p};}
- async familyWorkspace(familyId:string,u:AuthUser){const f=await this.access(this.pool,familyId,u);return {...await this.basics(this.pool,f),canEdit:u.effectiveRole==='GROUP_LEADER'&&f.imported?.batch_state!=='VOID'};}
+ async lifecycle(familyId:string,value:unknown,u:AuthUser){
+ const b=input(value),reason=str(b.reason,2000);if(u.effectiveRole!=='EXECUTIVE_MANAGER')throw new AppError(403,'ROLE','تغییر وضعیت عمومی خانواده فقط در اختیار مدیر اجرایی است.');
+ if(Object.keys(b).some(k=>!['version','status','reason'].includes(k))||!['ACTIVE','TEMPORARILY_INACTIVE'].includes(String(b.status)))throw new AppError(400,'STATE','وضعیت معتبر نیست.');
+ return this.g.tx(u,async c=>{const f=await this.access(c,familyId,u);const current=(await c.query('SELECT * FROM family.families WHERE id=$1 FOR UPDATE',[familyId])).rows[0];
+ if(f.imported?.batch_state==='VOID')throw new AppError(409,'IMPORT_VOID','پرونده Batch باطل‌شده قابل فعال‌سازی نیست.');
+ if(current.version!==b.version)throw new AppError(409,'STALE','پرونده تغییر کرده است؛ صفحه را تازه کنید.');
+ if(current.status===b.status)throw new AppError(409,'STATE','خانواده هم‌اکنون در همین وضعیت است.');
+ const next=(await c.query('UPDATE family.families SET status=$2,version=version+1,updated_at=now() WHERE id=$1 RETURNING *',[familyId,b.status])).rows[0];
+ await this.g.history(c,u,'FAMILY',familyId,'FAMILY_LIFECYCLE_CHANGED',{status:current.status},{status:next.status},reason);return {ok:true,status:next.status};},false);
+ }
+ async familyWorkspace(familyId:string,u:AuthUser){const f=await this.access(this.pool,familyId,u);return {...await this.basics(this.pool,f),canChangeLifecycle:u.effectiveRole==='EXECUTIVE_MANAGER'&&f.imported?.batch_state!=='VOID',canEdit:u.effectiveRole==='GROUP_LEADER'&&f.imported?.batch_state!=='VOID'};}
  async saveBasics(familyId:string,value:unknown,u:AuthUser){const b=input(value);return this.g.tx(u,async c=>{const f=await this.access(c,familyId,u,true);const locked=(await c.query('SELECT version FROM family.families WHERE id=$1 FOR UPDATE',[familyId])).rows[0];if(b.version!==locked.version)throw new AppError(409,'STALE','اطلاعات خانواده تغییر کرده است. صفحه را تازه کنید.');
  const family=input(b.family),members=b.members;if(!Array.isArray(members)||!members.length||members.length>40||members.some(m=>!m||typeof m!=='object'||Array.isArray(m))||members.filter(m=>m.relationship_code==='HEAD').length!==1)throw new AppError(400,'MEMBERS','یک سرپرست و فهرست اعضای معتبر لازم است.');
  const old=await this.basics(c,f);for(const m of old.members)if(!members.some((x:any)=>x.id===m.id))throw new AppError(400,'MEMBERS','حذف عضو موجود در این مرحله مجاز نیست.');
@@ -135,7 +153,7 @@ export class LivelihoodService {
  if(m.relationship_code==='HEAD'){const h=(await c.query('SELECT person_id FROM family.head_history WHERE family_id=$1 AND valid_to IS NULL',[familyId])).rows[0];if(h?.person_id!==person){await c.query('UPDATE family.head_history SET valid_to=current_date WHERE family_id=$1 AND valid_to IS NULL',[familyId]);await c.query('INSERT INTO family.head_history(family_id,person_id) VALUES($1,$2)',[familyId,person]);}}
  }
  if(family.formedOn&&!validDate(family.formedOn))throw new AppError(400,'DATE','تاریخ تشکیل پرونده معتبر نیست.');
- const basic={residenceType:text(family.residenceType),formedOn:text(family.formedOn,10),source:text(family.source)};
+ const basic={residenceType:text(family.residenceType),formedOn:f.imported?f.basic_data?.formedOn??'':text(family.formedOn,10),source:text(family.source)};
  await c.query('UPDATE family.families SET neighborhood=$2,basic_data=$3,version=version+1,updated_at=now() WHERE id=$1',[familyId,text(family.neighborhood,150),JSON.stringify(basic)]);await c.query("UPDATE assessment.domain_reviews SET state='DRAFT',version=version+1 WHERE family_id=$1 AND state='READY'",[familyId]);const next=await this.basics(c,await this.access(c,familyId,u));await this.g.history(c,u,'FAMILY',familyId,'LIVELIHOOD_BASE_UPDATED',old,next);return {ok:true,...next,canEdit:true};},false);}
  async save(familyId:string,value:unknown,u:AuthUser){const b=input(value),p=this.payload(b.payload);return this.g.tx(u,async c=>{const f=await this.access(c,familyId,u,true),m=await this.model(c);let review=(await c.query("SELECT * FROM assessment.domain_reviews WHERE family_id=$1 AND state<>'APPROVED' FOR UPDATE",[familyId])).rows[0];
  if(review&&(!['DRAFT','READY','RETURNED'].includes(review.state)||review.version!==b.version)||!review&&b.version!==0)throw new AppError(409,'STATE','نسخه تغییر کرده یا برای بررسی قفل است.');

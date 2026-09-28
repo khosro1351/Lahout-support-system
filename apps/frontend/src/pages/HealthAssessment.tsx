@@ -3,7 +3,7 @@ import {Link,useParams} from 'react-router-dom';
 import {Screen,Field,useData,Timeline,date} from './GuideWorkspace';
 import {useAuth} from '../auth/AuthProvider';
 import {api} from '../api/client';
-import {AssessmentDomainTabs} from '../components/AssessmentDomainTabs';
+import {AssessmentHeader} from '../components/AssessmentHeader';
 import {PersianDate} from '../components/PersianDate';
 
 import {HealthSpecialized} from '../components/HealthSpecialized';
@@ -61,7 +61,7 @@ function MemberScreening({member,familyId,refresh,open,onSelect,children,formCom
 }
 
 type Row=Record<string,any>;
-const workflowStates:Record<string,string>={DRAFT:'در حال تکمیل',SUBMITTED:'منتظر تأیید مدیر اجرایی',RETURNED:'برگشتی برای اصلاح',APPROVED:'تأییدشده'};
+const workflowStates:Record<string,string>={NOT_RECORDED:'ثبت نشده',READY:'آماده ارسال',DRAFT:'در حال تکمیل',SUBMITTED:'منتظر تأیید مدیر اجرایی',RETURNED:'برگشتی برای اصلاح',APPROVED:'تأییدشده'};
 export function HealthAssessment(){
  const {id}=useParams(),{user}=useAuth(),{data:loaded,error,refresh}=useData('/health-assessment/families/'+id);
  const [data,setData]=useState<Row|null>(null),[expanded,setExpanded]=useState(''),[selected,setSelected]=useState(''),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[reason,setReason]=useState('');
@@ -74,14 +74,14 @@ export function HealthAssessment(){
  const editable=!historical&&data?.canEdit&&user?.effectiveRole==='GROUP_LEADER';
  const formComplete=(m:Row)=>m.specialized&&Object.keys(fields).every(k=>m.specialized[k]?.trim());
  return <Screen title="سلامت و درمان" error={error} loading={!data&&!error}>{data&&<div className="health-workspace">
- <AssessmentDomainTabs familyId={id!}/>
- <header className="panel domain-heading"><div><h2>ارزیابی سلامت و درمان</h2><p><bdi>{data.family.code}</bdi> · {workflowStates[historical?(submission.decision??'SUBMITTED'):(review?.state??'DRAFT')]}</p><p>{historical?'حالت مشاهده نسخه تاریخی':editable?'حالت ویرایش ارزیابی سلامت':'حالت مشاهده ارزیابی سلامت'}</p></div>
+ <AssessmentHeader familyId={id!} familyCode={data.family.code} familyStatus={data.family.status} status={workflowStates[historical?(submission.decision??'SUBMITTED'):(review?.state==='DRAFT'&&data.result.complete?'READY':review?.state??'NOT_RECORDED')]} mode={historical?'حالت مشاهده نسخه تاریخی':editable?'حالت ویرایش ارزیابی سلامت':'حالت مشاهده ارزیابی سلامت'} reason={submission?.decision==='RETURNED'?submission.reason:undefined}>
  {user?.effectiveRole==='GROUP_LEADER'&&!review&&<button disabled={busy} onClick={()=>void run('/health-assessment/families/'+id+'/draft',{}).then(ok=>{if(ok){setSelected('');setExpanded('');}})}>{submission?'ایجاد ارزیابی جدید با حفظ نسخه تأییدشده':'ایجاد پیش‌نویس سلامت'}</button>}
  {review&&['DRAFT','RETURNED'].includes(review.state)&&user?.effectiveRole==='GROUP_LEADER'&&<button className="secondary" onClick={()=>{setSelected('');setExpanded('');}}>ادامه ارزیابی در حال تکمیل</button>}
- </header>
+ {data.canDecide&&<a href="#health-decision">بررسی و تصمیم مدیر اجرایی</a>}
+ </AssessmentHeader>
  <p className="quiet-state">امتیاز سلامت: نامشخص — در انتظار تصویب قواعد عددی (سقف حوزه: ۲۰). تأیید این نسخه مربوط به محتوای ارزیابی است.</p>
  {!!data.submissions?.length&&<Field label="نسخه سلامت"><select value={historical?submission.id:''} onChange={e=>{setSelected(e.target.value);setExpanded('');}}>{review&&review.state!=='SUBMITTED'&&user?.effectiveRole==='GROUP_LEADER'&&<option value="">ارزیابی جاری — {workflowStates[review.state]}</option>}{data.submissions.map((s:Row)=><option key={s.id} value={s.id}>نسخه {digits(s.revision)} — {workflowStates[s.decision??'SUBMITTED']} — {date(s.submitted_at)}</option>)}</select></Field>}
- {submission?.decision==='RETURNED'&&<p className="error-banner">دلیل بازگشت: {submission.reason}</p>}
+
  {historical&&<section className="panel"><p>ارسال: <PersianDate value={submission.submitted_at} withTime/> {submission.decision==='APPROVED'&&<> · تأییدکننده: {submission.approver} · <PersianDate value={submission.decided_at} withTime/></>}</p><details><summary>اطلاعات خانواده در زمان ارسال این نسخه</summary><FamilyBaseView family={shown.family} members={members} asOf={submission.submitted_at}/></details></section>}
  <h2>غربالگری سلامت اعضای خانواده</h2>
  <div className="panel table-scroll screening-summary"><table><thead><tr><th>نام و نام خانوادگی</th><th>نسبت</th><th>وضعیت غربالگری</th><th>مسئله مؤثر سلامت</th><th>وضعیت فرم تخصصی</th><th>اقدام</th></tr></thead><tbody>{members.map(m=><tr key={m.id}><td>{m.first_name} {m.last_name}</td><td>{relations[m.relationship_code]??m.relationship_code}</td><td>{m.answer==='UNKNOWN'?'نامشخص / نیازمند بررسی':m.answer?'ثبت شده':'ثبت نشده'}</td><td>{answers[m.answer as keyof typeof answers]??'—'}</td><td>{m.answer==='NO'?'نیاز ندارد':m.answer==='YES'?formComplete(m)?'تکمیل شده':'فرم تخصصی نیازمند تکمیل':'نیازمند بررسی'}</td><td><button className="secondary" onClick={()=>{setExpanded(m.id);requestAnimationFrame(()=>document.getElementById('screening-'+m.id)?.scrollIntoView({block:'start',behavior:'smooth'}));}}>{editable?'ثبت / ویرایش غربالگری':'مشاهده جزئیات'}</button></td></tr>)}</tbody></table></div>
@@ -90,7 +90,7 @@ export function HealthAssessment(){
  {m.answer==='YES'&&(review?<HealthSpecialized member={m} familyId={id!} fields={fields} documents={data.documents??[]} refresh={refresh}/>:<p>برای تکمیل فرم تخصصی، «ایجاد پیش‌نویس سلامت» را انتخاب کنید.</p>)}
  </MemberScreening>:<details className="panel" data-member={m.id} open={expanded===m.id}><summary onClick={e=>{e.preventDefault();setExpanded(expanded===m.id?'':m.id);}}>{m.first_name} {m.last_name}</summary><dl className="read-only-grid"><div><dt>پاسخ غربالگری</dt><dd>{answers[m.answer as keyof typeof answers]??'ثبت نشده'}</dd></div><div><dt>منبع بررسی</dt><dd>{sources[m.source as keyof typeof sources]??'ثبت نشده'}</dd></div><div><dt>توضیحات</dt><dd>{m.notes||'—'} {m.source_detail}</dd></div>{m.answer==='YES'&&Object.entries(fields as Record<string,string>).map(([k,label])=><div key={k}><dt>{label}</dt><dd>{m.specialized?.[k]||'ثبت نشده'}</dd></div>)}{m.specialized&&<><div><dt>هزینه تقریبی (تومان)</dt><dd>{m.specialized.cost==null?'ثبت نشده':digits(m.specialized.cost)}</dd></div><div><dt>توضیحات تکمیلی</dt><dd>{m.specialized.notes||'—'}</dd></div></>}</dl>{m.specialized?.documentIds?.map((doc:string)=>{const d=shown.documents?.find((x:Row)=>x.id===doc);return d?<p key={doc}><a href={'/api/v1/livelihood/families/'+id+'/documents/'+doc}>{d.name}</a></p>:null;})}</details>}</div>)}
  {editable&&review&&<section className="panel"><h2>نتیجه و ارسال سلامت</h2><p>غربالگری همه اعضا و فرم‌های لازم بررسی می‌شوند؛ امتیاز عددی در این مرحله شرط ارسال نیست.</p>{data.result?.missing?.length>0&&<ul>{data.result.missing.map((m:string)=><li key={m}>{m}</li>)}</ul>}<button disabled={busy||!data.result?.complete} onClick={()=>void run('/health-assessment/families/'+id+'/submit',{version:review.version}).then(ok=>{if(ok)setSelected('');})}>ارسال سلامت برای مدیر اجرایی</button></section>}
- {data.canDecide&&submission&&submission.id===data.submissions[0]?.id&&<section className="panel"><h2>تصمیم مدیر اجرایی</h2><Field label="دلیل بازگشت سلامت"><textarea value={reason} onChange={e=>setReason(e.target.value)} maxLength={2000}/></Field><div className="workspace-actions"><button disabled={busy} onClick={()=>void run('/health-assessment/submissions/'+submission.id+'/approve',{version:review.version})}>تأیید محتوای سلامت</button><button className="secondary" disabled={busy||!reason.trim()} onClick={()=>void run('/health-assessment/submissions/'+submission.id+'/return',{version:review.version,reason})}>بازگرداندن برای اصلاح</button></div></section>}
+ {data.canDecide&&submission&&submission.id===data.submissions[0]?.id&&<section className="panel" id="health-decision"><h2>تصمیم مدیر اجرایی</h2><Field label="دلیل بازگشت سلامت"><textarea value={reason} onChange={e=>setReason(e.target.value)} maxLength={2000}/></Field><div className="workspace-actions"><button disabled={busy} onClick={()=>void run('/health-assessment/submissions/'+submission.id+'/approve',{version:review.version})}>تأیید محتوای سلامت</button><button className="secondary" disabled={busy||!reason.trim()} onClick={()=>void run('/health-assessment/submissions/'+submission.id+'/return',{version:review.version,reason})}>بازگرداندن برای اصلاح</button></div></section>}
  {message&&<p role="status">{message}</p>}
  <details className="panel"><summary>تاریخچه و جزئیات ثبت سلامت</summary><Timeline rows={data.history??[]}/></details>
  </div>}</Screen>;

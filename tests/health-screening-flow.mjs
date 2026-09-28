@@ -201,7 +201,7 @@ try {
  workspace=await get(url,leader);assert.ok(workspace.members.every(m=>m.screening.notes==='غربالگری مرورگر'));
  assert.deepEqual(await digest(),beforeHealth);
  await nav.getByRole('link',{name:'معیشت و اقتصاد',exact:true}).click();
- await page.getByRole('button',{name:'معیشت و اقتصاد',exact:true}).click();await page.getByRole('heading',{name:'جمع‌بندی چهار شاخص معیشت',exact:true}).waitFor();
+ await page.getByRole('button',{name:'جمع‌بندی چهار شاخص',exact:true}).click();await page.getByRole('heading',{name:'جمع‌بندی چهار شاخص معیشت',exact:true}).waitFor();
  assert.equal(await page.locator('input[type=date]').count(),0);assert.equal(await page.locator('.role-shell').getAttribute('dir'),'rtl');assert.deepEqual(errors,[]);
  pass('Real browser leader login: Jalali display/edit/validation/persistence; all members screening, source, metadata, refresh, RTL and livelihood return; no livelihood data changes');
 } catch(e){results.push({name:'suite',status:'FAIL',message:e.message});throw e;}

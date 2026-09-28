@@ -24,6 +24,8 @@ class LivelihoodController {
 @Controller('family-workspace') @UseGuards(SessionGuard)
 class FamilyWorkspaceController {
  constructor(private s:LivelihoodService){}
+ @Get('families') list(@Req() r:AuthenticatedRequest){return this.s.list(r.user,true);}
+ @Post('families/:id/lifecycle') @HttpCode(200) @UseGuards(CsrfGuard) lifecycle(@Param('id') id:string,@Body() b:unknown,@Req() r:AuthenticatedRequest){return this.s.lifecycle(id,b,r.user);}
  @Get('families/:id') workspace(@Param('id') id:string,@Req() r:AuthenticatedRequest){return this.s.familyWorkspace(id,r.user);}
  @Post('families/:id') @HttpCode(200) @UseGuards(CsrfGuard) save(@Param('id') id:string,@Body() b:unknown,@Req() r:AuthenticatedRequest){return this.s.saveBasics(id,b,r.user);}
 }

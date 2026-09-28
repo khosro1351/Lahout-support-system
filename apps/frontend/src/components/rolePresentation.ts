@@ -5,10 +5,11 @@ export const displayName=(name:string|undefined)=>name?.includes('راهبر ع�
 export function logicalParent(path:string,role:string){
  const home=roleHomes[role]??'/select-role';
  if(/^\/executive\/assessments\/[^/]+$/.test(path))return '/executive/assessments';
+ if(/^\/workspace\/health\/[^/]+$/.test(path))return role==='EXECUTIVE_MANAGER'?'/executive/health-assessments':'/workspace/health';
  if(path.startsWith('/technical/'))return home;
  if(/^\/workspace\/livelihood\/[^/]+$/.test(path))return '/workspace/livelihood';
  if(/^\/workspace\/families\/[^/]+\/assessments$/.test(path))return path.replace(/\/assessments$/,'');
- if(/^\/workspace\/families\/[^/]+$/.test(path))return role==='GROUP_LEADER'?'/leader/families':role==='SUPREME_GUIDE'?'/guide/families':'/workspace/groups';
+ if(/^\/workspace\/families\/[^/]+$/.test(path))return role==='GROUP_LEADER'?'/leader/families':role==='SUPREME_GUIDE'?'/guide/families':role==='EXECUTIVE_MANAGER'?'/workspace/families':'/workspace/groups';
  if(/^\/workspace\/groups\/[^/]+$/.test(path))return '/workspace/groups';
  if(/^\/workspace\/items\/[^/]+$/.test(path))return '/workspace';
  if(role==='SUPREME_GUIDE'){

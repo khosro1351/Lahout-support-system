@@ -160,7 +160,23 @@ try {
  const importedId=imported[0].family_id;
  await post('/health-assessment/families/'+importedId+'/draft',{},leader,409);
  await classify(importedId,'ACTIVE');await post('/health-assessment/families/'+importedId+'/draft',{},leader,409);
- await classify(importedId,'INACTIVE');
+
+ const lifecycle=async(id,status,auth=executive,expected=200,reason='تغییر وضعیت برای بررسی پایلوت')=>post('/family-workspace/families/'+id+'/lifecycle',{version:(await get('/family-workspace/families/'+id,executive)).family.version,status,reason},auth,expected);
+ const mainList=async()=> (await get('/family-workspace/families',leader)).families;
+ const appeared=(await mainList()).find(f=>f.id===importedId);assert.equal(appeared.family_status,'ACTIVE');assert.equal(appeared.imported.members_confirmed_at,null);
+ assert.equal((await get('/family-workspace/families',other)).families.some(f=>f.id===importedId),false);
+ await post('/family-import/families/'+importedId,{version:(await familyRow(importedId)).version,action:'INACTIVE'},leader,403);
+ for(const auth of [leader,other,guide,helper])await lifecycle(importedId,'TEMPORARILY_INACTIVE',auth,403);
+ await lifecycle(importedId,'TEMPORARILY_INACTIVE',executive,400,' ');
+ await lifecycle(importedId,'TEMPORARILY_INACTIVE');
+ assert.equal((await mainList()).find(f=>f.id===importedId).family_status,'TEMPORARILY_INACTIVE');
+ await lifecycle(importedId,'ACTIVE');assert.equal((await mainList()).find(f=>f.id===importedId).family_status,'ACTIVE');
+ const created=(await pool.query('SELECT created_at FROM family.families WHERE id=$1',[importedId])).rows[0].created_at.toISOString();
+ assert.equal((await get('/family-workspace/families/'+importedId,leader)).family.imported.transferred_at,created);
+ const events=(await pool.query("SELECT * FROM guidance.history WHERE entity_id=$1 AND action='FAMILY_LIFECYCLE_CHANGED' ORDER BY occurred_at",[importedId])).rows;
+ assert.equal(events.length,2);assert.ok(events.every(e=>e.actor_id===executive.user.accountId&&e.reason&&e.occurred_at));
+ pass('Pilot immediate imported visibility before member completion; lifecycle permissions, inactive retrieval, reactivation and audited automatic timestamp');
+
  preview=await get(batchUrl(batch.id),executive);assert.equal(preview.canRollback,true);
  await post(batchUrl(batch.id)+'/rollback',{version:preview.batch.version,reason:'ابطال آزمایشی غیرحذفی'},executive);
  preview=await get(batchUrl(batch.id),executive);assert.equal(preview.batch.state,'VOID');assert.equal(preview.rows.length,9);assert.ok(preview.rows.filter(r=>r.family_id).every(r=>r.family_status==='CLOSED'));
@@ -171,7 +187,28 @@ try {
  async function importOne(label){const b=await upload([[label,'خانواده']]);const p=await get(batchUrl(b.id),leader);await post(batchUrl(b.id)+'/confirm',{version:p.batch.version,rowIds:[p.rows[0].id]},leader);const ready=await get(batchUrl(b.id),leader);return {id:ready.rows[0].family_id,batch:b.id};}
  const operational=await importOne('عملیاتی');await classify(operational.id,'ACTIVE');await classify(operational.id,'MEMBERS_COMPLETE');await post('/health-assessment/families/'+operational.id+'/draft',{},leader);
  preview=await get(batchUrl(operational.batch),executive);assert.equal(preview.canRollback,false);await post(batchUrl(operational.batch)+'/rollback',{version:preview.batch.version,reason:'نباید مجاز باشد'},executive,409);
- const manual=await importOne('ویرایش');const base=await get('/family-workspace/families/'+manual.id,leader);base.members[0].first_name='نام اصلاح‌شده';await post('/family-workspace/families/'+manual.id,{version:base.family.version,family:base.family,members:base.members},leader);
+
+ const keptDraft=await get('/health-assessment/families/'+operational.id,leader);
+ await lifecycle(operational.id,'TEMPORARILY_INACTIVE');
+ assert.equal((await get('/health-assessment/families/'+operational.id,leader)).review.id,keptDraft.review.id);
+ await lifecycle(operational.id,'ACTIVE');
+ const one=(await get('/health-assessment/families/'+operational.id,leader)).members[0];
+ await post('/health-screening/families/'+operational.id+'/members/'+one.id,{answer:'NO',source:'INTERVIEW',notes:'',version:0},leader);
+ let opHealth=await get('/health-assessment/families/'+operational.id,leader);
+ const opSubmission=await post('/health-assessment/families/'+operational.id+'/submit',{version:opHealth.review.version},leader);
+ await lifecycle(operational.id,'TEMPORARILY_INACTIVE');
+ opHealth=await get('/health-assessment/families/'+operational.id,executive);assert.equal(opHealth.family.status,'TEMPORARILY_INACTIVE');
+ await post('/health-assessment/submissions/'+opSubmission.id+'/return',{version:opHealth.review.version,reason:'اصلاح پس از فعال‌سازی'},executive);
+ assert.deepEqual((await pool.query('SELECT snapshot FROM assessment.health_submissions WHERE id=$1',[opSubmission.id])).rows[0].snapshot,opSubmission.snapshot);
+ await lifecycle(operational.id,'ACTIVE');opHealth=await get('/health-assessment/families/'+operational.id,leader);
+ const opAgain=await post('/health-assessment/families/'+operational.id+'/submit',{version:opHealth.review.version},leader);
+ await lifecycle(operational.id,'TEMPORARILY_INACTIVE');opHealth=await get('/health-assessment/families/'+operational.id,executive);
+ await post('/health-assessment/submissions/'+opAgain.id+'/approve',{version:opHealth.review.version},executive);
+ assert.equal((await get('/health-assessment/families/'+operational.id,executive)).submissions[0].decision,'APPROVED');
+ pass('Pilot inactive imported family retains draft and submitted snapshot; manager can return and approve without cancellation');
+
+ const manual=await importOne('ویرایش');const base=await get('/family-workspace/families/'+manual.id,leader);const originalTransferred=base.family.imported.transferred_at;base.family.formedOn='2000-01-01';base.family.imported.transferred_at='2000-01-01T00:00:00Z';base.members[0].first_name='نام اصلاح‌شده';await post('/family-workspace/families/'+manual.id,{version:base.family.version,family:base.family,members:base.members},leader);
+ assert.equal((await get('/family-workspace/families/'+manual.id,leader)).family.imported.transferred_at,originalTransferred);
  preview=await get(batchUrl(manual.batch),executive);assert.equal(preview.canRollback,false);
  assert.equal((await get('/family-import',other)).families.length,0);assert.ok((await get('/family-import',guide)).families.length>=4);
  await post(batchUrl(manual.batch)+'/rollback',{version:preview.batch.version,reason:'فاقد اختیار'},guide,403);
@@ -207,9 +244,9 @@ try {
  pass('Browser dashboard summary and KPI drilldown; family base read-only with three active and three deferred domains');
  await nav.getByRole('link',{name:'سلامت و درمان',exact:true}).click();await page.getByRole('heading',{name:'غربالگری سلامت اعضای خانواده',exact:true}).waitFor();
  await page.locator('tbody tr').first().getByRole('button').click();const panel=page.locator('details[data-member="'+member.id+'"]');
- await panel.getByLabel('دسترسی به درمان، دارو و خدمات',{exact:true}).fill('شرح دسترسی ثبت‌شده در مرورگر');
+ await panel.getByLabel('دسترسی به درمان، دارو و خدمات',{exact:true}).selectOption('__other');await panel.getByLabel('توضیح سایر — دسترسی به درمان، دارو و خدمات',{exact:true}).fill('شرح دسترسی ثبت‌شده در مرورگر');
  await Promise.all([page.waitForResponse(r=>r.url().includes('/health-assessment/families/')&&r.request().method()==='POST'&&r.status()===200),panel.getByRole('button',{name:'ذخیره فرم تخصصی',exact:true}).click()]);
- await page.reload();await page.locator('tbody tr').first().getByRole('button').click();assert.equal(await panel.getByLabel('دسترسی به درمان، دارو و خدمات',{exact:true}).inputValue(),'شرح دسترسی ثبت‌شده در مرورگر');
+ await page.reload();await page.locator('tbody tr').first().getByRole('button').click();assert.equal(await panel.getByLabel('توضیح سایر — دسترسی به درمان، دارو و خدمات',{exact:true}).inputValue(),'شرح دسترسی ثبت‌شده در مرورگر');
  await page.locator('tbody tr').nth(1).getByRole('button').click();assert.equal(await page.locator('details[data-member][open]').count(),1);
  await page.getByRole('button',{name:'ارسال سلامت برای مدیر اجرایی',exact:true}).click();await page.getByText('حالت مشاهده نسخه تاریخی',{exact:true}).waitFor();
  await ep.goto(origin+'/executive/health-assessments');await ep.getByRole('link',{name:new RegExp(family.family_code??family.code)}).first().click();await ep.getByLabel('دلیل بازگشت سلامت').fill('تکمیل توضیح در مرورگر');await ep.getByRole('button',{name:'بازگرداندن برای اصلاح',exact:true}).click();await ep.getByRole('heading',{name:'تصمیم مدیر اجرایی',exact:true}).waitFor({state:'hidden'});
@@ -225,7 +262,7 @@ try {
  await page.getByRole('button',{name:'بارگذاری و بررسی',exact:true}).click();await page.waitForURL('**/workspace/family-import/*');
  await page.getByRole('button',{name:'تأیید ورود خانواده‌های انتخاب‌شده',exact:true}).waitFor();assert.ok((await page.locator('tbody').innerText()).includes('تاریخ'));assert.equal(await page.locator('input[type=checkbox]:checked').count(),1);
  const browserBatch=new URL(page.url()).pathname.split('/').pop();await page.getByRole('button',{name:'تأیید ورود خانواده‌های انتخاب‌شده',exact:true}).click();await page.getByRole('heading',{name:'ابطال Batch',exact:true}).waitFor();
- await page.getByRole('link',{name:'بازگشت به ورود خانواده‌ها',exact:true}).click();const row=page.locator('tbody tr').filter({hasText:'مرورگر سالم'});await row.getByRole('button',{name:'فعال',exact:true}).click();await row.getByText('نیازمند تکمیل اعضای خانواده',{exact:true}).waitFor();await row.getByRole('button',{name:'تکمیل اعضای خانواده تأیید شد',exact:true}).click();await row.getByText('نیازمند ارزیابی جدید',{exact:true}).waitFor();await row.getByRole('button',{name:'غیرفعال',exact:true}).click();await row.getByRole('button',{name:'فعال',exact:true}).waitFor();
+ await page.getByRole('link',{name:'بازگشت به ورود خانواده‌ها',exact:true}).click();const row=page.locator('tbody tr').filter({hasText:'مرورگر سالم'});await row.getByRole('button',{name:'فعال',exact:true}).click();await row.getByText('نیازمند تکمیل اعضای خانواده',{exact:true}).waitFor();await row.getByRole('button',{name:'تکمیل اعضای خانواده تأیید شد',exact:true}).click();await row.getByText('نیازمند ارزیابی جدید',{exact:true}).waitFor();assert.equal(await row.getByRole('button',{name:'غیرفعال',exact:true}).count(),0);assert.equal(await row.getByRole('button',{name:'فعال',exact:true}).count(),0);
  await ep.goto(origin+'/workspace/family-import/'+browserBatch);await ep.getByLabel('دلیل ابطال',{exact:true}).fill('ابطال آزمایش رابط');await ep.getByRole('button',{name:'ابطال غیرحذفی Batch',exact:true}).click();await ep.getByText(/ابطال غیرحذفی؛ فایل/).waitFor();
  const gp=await browserAs(guide);await gp.goto(origin+'/workspace/family-import');await gp.getByRole('heading',{name:'سابقه Batchها',exact:true}).waitFor();assert.equal(await gp.locator('input[type=file]').count(),0);assert.equal(await gp.locator('tbody button').count(),0);
  pass('Browser template, upload/error preview, selected confirm, explicit member completion, classification, manager rollback and witness read-only');
@@ -237,7 +274,22 @@ try {
  await pool.query("UPDATE oversight.alerts SET state='RESOLVED',resolved_at=now(),resolved_by=$2,action_taken='رسیدگی شد',result='رفع شد' WHERE id=$1",[alert.id,executive.user.accountId]);
  await page.reload();await page.getByRole('button',{name:/^همه اعلان‌ها/}).waitFor();assert.equal(await critical.count(),0);await page.getByRole('button',{name:/^همه اعلان‌ها/}).click();await normal.waitFor();await critical.waitFor();
  pass('Unread inbox removes ordinary read notices, retains read active critical alerts until resolution, and keeps all history');
- for(const route of ['/workspace/health/'+family.id,'/workspace/family-import','/workspace/family-import/'+browserBatch]){await page.goto(origin+route);await page.locator('.health-workspace,.panel').first().waitFor();for(const width of [1440,768,390]){await page.setViewportSize({width,height:1000});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'overflow '+route+' '+width);}}
+
+ await ep.goto(origin+'/workspace/families/'+operational.id);await ep.getByText('تغییر وضعیت خانواده — غیرفعال',{exact:true}).click();
+ await ep.getByLabel('دلیل تغییر وضعیت خانواده',{exact:true}).fill('فعال‌سازی مجدد در مرورگر');
+ await ep.getByRole('button',{name:'فعال کردن خانواده',exact:true}).click();await ep.getByText('وضعیت خانواده تغییر کرد.',{exact:true}).waitFor();
+ await page.goto(origin+'/leader/families');await page.getByRole('row').filter({hasText:'عملیاتی خانواده'}).waitFor();
+ await ep.reload();await ep.getByText('تغییر وضعیت خانواده — فعال',{exact:true}).click();await ep.getByLabel('دلیل تغییر وضعیت خانواده',{exact:true}).fill('خروج موقت از صف روزمره');
+ await ep.getByRole('button',{name:'غیرفعال کردن خانواده',exact:true}).click();await ep.getByText('وضعیت خانواده تغییر کرد.',{exact:true}).waitFor();
+ await page.reload();await page.getByLabel('وضعیت خانواده',{exact:true}).waitFor();assert.equal(await page.getByRole('row').filter({hasText:'عملیاتی خانواده'}).count(),0);
+ await page.getByLabel('وضعیت خانواده',{exact:true}).selectOption('TEMPORARILY_INACTIVE');await page.getByRole('row').filter({hasText:'عملیاتی خانواده'}).getByRole('link',{name:'مشاهده پرونده'}).click();
+ const baseRegion=page.getByRole('region',{name:'اطلاعات جاری پرونده'});assert.equal(await baseRegion.getByLabel('دلیل تغییر وضعیت خانواده').count(),0);
+ await baseRegion.getByRole('button',{name:'ویرایش اطلاعات پرونده'}).click();assert.equal(await baseRegion.getByLabel('تاریخ تشکیل/انتقال پرونده').locator('select,input').count(),0);
+ await gp.goto(origin+'/workspace/families/'+operational.id);await gp.getByRole('region',{name:'اطلاعات جاری پرونده'}).waitFor();assert.equal(await gp.getByRole('button',{name:'ویرایش اطلاعات پرونده'}).count(),0);assert.equal(await gp.getByLabel('دلیل تغییر وضعیت خانواده').count(),0);
+ await gp.goto(origin+'/workspace/health/'+operational.id);await gp.getByText('حالت مشاهده نسخه تاریخی',{exact:true}).waitFor();assert.equal(await gp.getByRole('button',{name:'تأیید محتوای سلامت'}).count(),0);
+ pass('Pilot browser manager lifecycle, immediate leader active/inactive filters, immutable import date and witness read-only desktop');
+
+ for(const route of ['/leader/families','/workspace/families/'+family.id,'/workspace/livelihood/'+family.id,'/workspace/notifications','/workspace','/workspace/health/'+family.id,'/workspace/family-import','/workspace/family-import/'+browserBatch]){await page.goto(origin+route);await page.locator('.health-workspace,.panel,.role-card,.leader-workspace,.notification-tabs').first().waitFor();for(const width of [1440,768,390]){await page.setViewportSize({width,height:1000});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'overflow '+route+' '+width);}}
  assert.deepEqual(errors,[]);assert.equal(await digest(),oldLivelihood);pass('New health/import pages fit desktop/tablet/mobile without JS errors or livelihood snapshot changes');
 } catch(error){results.push({name:error.message,status:'FAIL'});console.error(error);process.exitCode=1;}
 finally{if(browser)await browser.close();await stop(front);await stop(server);await pool.end();await dropTestDatabase(admin,dbName);await admin.end();writeFileSync(path.join(out,'results.json'),JSON.stringify(results,null,2));}

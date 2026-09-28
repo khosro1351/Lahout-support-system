@@ -38,7 +38,7 @@ try{
  const nav=page.getByRole('navigation',{name:'حوزه‌های ارزیابی'});
  await nav.waitFor();assert.equal(await nav.getByRole('link').count(),3);
  assert.equal(await nav.getByRole('link',{name:'معیشت و اقتصاد',exact:true}).getAttribute('aria-current'),'page');
- await page.getByRole('button',{name:'معیشت و اقتصاد',exact:true}).click();
+ await page.getByRole('button',{name:'درآمد و منابع',exact:true}).click();
  const original=await page.locator('.livelihood').innerText();
  await nav.getByRole('link',{name:'سلامت و درمان',exact:true}).click();
  await page.waitForURL('**/workspace/health/'+family.id);
@@ -49,7 +49,7 @@ try{
  assert.equal(await page.locator('html').getAttribute('dir'),'rtl');assert.equal(await nav.getAttribute('dir'),'rtl');
  await nav.getByRole('link',{name:'معیشت و اقتصاد',exact:true}).click();
  await page.waitForURL('**/workspace/livelihood/'+family.id);
- await page.getByRole('button',{name:'معیشت و اقتصاد',exact:true}).click();
+ await page.getByRole('button',{name:'درآمد و منابع',exact:true}).click();
  assert.equal(await page.locator('.livelihood').innerText(),original);
  if(mocked){
   await page.getByRole('button',{name:'نتیجه و ارسال',exact:true}).click();
