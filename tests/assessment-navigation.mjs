@@ -18,7 +18,7 @@ try{
    if(path==='/api/v1/auth/login'){loggedIn=true;body={user,csrfToken:'test'};}
    else if(path==='/api/v1/auth/me'){status=loggedIn?200:401;body=loggedIn?{user,csrfToken:'test'}:{message:'ورود لازم است'};}
    else if(path==='/api/v1/livelihood/families/'+fixture.id)body=data;
-   else if(path==='/api/v1/health-assessment/families/'+fixture.id)body={family:data.family,members:[],fields:{},result:{score:null},submissions:[],history:[],review:null,canEdit:true};
+   else if(path==='/api/v1/health-assessment/families/'+fixture.id)body={family:data.family,members:[],fields:{},result:{score:null,complete:false},submissions:[],history:[],review:{state:'DRAFT',version:1},canEdit:true};
    else if(path.includes('notifications'))body={notifications:[],unread:0};
    await route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
   });
@@ -37,6 +37,7 @@ try{
  await page.goto(origin+'/workspace/livelihood/'+family.id);
  const nav=page.getByRole('navigation',{name:'حوزه‌های ارزیابی'});
  await nav.waitFor();assert.equal(await nav.getByRole('link').count(),3);
+ if(mocked){assert.equal(await page.getByRole('navigation',{name:'مراحل ارزیابی'}).count(),1);assert.equal(await page.locator('.assessment-header').getByRole('button',{name:'ارسال برای مدیر اجرایی',exact:true}).count(),1);assert.equal(await page.getByRole('button',{name:'ارسال برای مدیر اجرایی',exact:true}).count(),1);const styles=await page.locator('.role-sidebar nav a').evaluateAll(xs=>xs.map(x=>[getComputedStyle(x).fontSize,getComputedStyle(x).fontWeight].join('/')));assert.equal(new Set(styles).size,1);}
  assert.equal(await nav.getByRole('link',{name:'معیشت و اقتصاد',exact:true}).getAttribute('aria-current'),'page');
  await page.getByRole('button',{name:'درآمد و منابع',exact:true}).click();
  const original=await page.locator('.livelihood').innerText();
@@ -45,6 +46,7 @@ try{
  const message=page.getByRole('heading',{name:'غربالگری سلامت اعضای خانواده',exact:true});await message.waitFor();
  assert.equal(await nav.getByRole('link',{name:/سلامت و درمان/}).getAttribute('aria-current'),'page');
  assert.equal(await page.getByRole('button',{name:/حذف عضو|افزودن عضو/}).count(),0);
+ if(mocked){assert.equal(await page.locator('.assessment-header').getByRole('button',{name:'ارسال سلامت برای مدیر اجرایی',exact:true}).count(),1);assert.equal(await page.getByRole('button',{name:'ارسال سلامت برای مدیر اجرایی',exact:true}).count(),1);}
  await page.reload();await message.waitFor();assert.equal(new URL(page.url()).pathname,'/workspace/health/'+family.id);
  assert.equal(await page.locator('html').getAttribute('dir'),'rtl');assert.equal(await nav.getAttribute('dir'),'rtl');
  await nav.getByRole('link',{name:'معیشت و اقتصاد',exact:true}).click();
@@ -53,6 +55,8 @@ try{
  assert.equal(await page.locator('.livelihood').innerText(),original);
  if(mocked){
   await page.getByRole('button',{name:'نتیجه و ارسال',exact:true}).click();
+  assert.equal(await page.locator('.assessment-history').getAttribute('open'),null);
+  await page.getByText('تاریخچه معیشت',{exact:true}).click();
   assert.ok((await page.locator('.livelihood').innerText()).includes('۱۴۰۵/۰۷/۰۴ - ۱۴:۳۰'));
  }
  assert.deepEqual(writes,[]);assert.deepEqual(errors,[]);

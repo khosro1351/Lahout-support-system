@@ -186,6 +186,32 @@ try {
  const current=await get('/livelihood/families/'+second.id,leader);
  const rows={...payload,employment:current.members.map(m=>({memberId:m.id,state:'بدون شغل و درآمد',ability:'ندارد',barrier:'مانع فرضی'}))};
  for(const [name,title] of Object.entries({income:'درآمد و منابع',employment:'اشتغال و توان اقتصادی',expenses:'هزینه‌ها و تعهدات',evidence:'شواهد و توضیحات'})){await page.getByRole('button',{name:title,exact:true}).click();for(const [index,row] of rows[name].entries()){await page.getByRole('button',{name:'افزودن ردیف '+title,exact:true}).click();for(const field of current.schema[name])if(row[field.key]!==undefined){const input=page.getByLabel(title+' '+field.label+' '+(index+1),{exact:true});if(field.options||field.type==='member')await input.selectOption(String(row[field.key]));else if(['skill','barrier'].includes(field.key)){await input.selectOption('__other');await page.getByLabel('توضیح سایر — '+title+' '+field.label+' '+(index+1),{exact:true}).fill(String(row[field.key]));}else await input.fill(String(row[field.key]));}}}
+
+ // Exercise the actual shared date control with PostgreSQL-backed save/refresh.
+ await page.getByRole('button',{name:'درآمد و منابع',exact:true}).click();
+ const incomeDate=page.getByRole('group',{name:'درآمد و منابع تاریخ شروع در صورت معلوم بودن 1',exact:true});
+ const year=incomeDate.getByLabel('سال',{exact:true}),month=incomeDate.getByLabel('ماه',{exact:true}),day=incomeDate.getByLabel('روز',{exact:true});
+ assert.equal(await day.isDisabled(),true);
+ await year.selectOption('1403');await month.selectOption('12');
+ assert.equal(await day.isDisabled(),false);
+ assert.equal(await day.locator('option').count(),31);
+ assert.equal(await page.getByRole('button',{name:'ذخیره و محاسبه',exact:true}).isDisabled(),true);
+ await day.selectOption('30');
+ async function saveDate(){await page.getByRole('button',{name:'ذخیره و محاسبه',exact:true}).click();await page.getByRole('status').filter({hasText:'ثبت شد.'}).waitFor();await page.reload();await incomeDate.waitFor();}
+ await saveDate();assert.equal(await year.inputValue(),'1403');assert.equal(await month.inputValue(),'12');assert.equal(await day.inputValue(),'30');
+ assert.equal((await get('/livelihood/families/'+second.id,leader)).payload.income[0].startedOn,'2025-03-20');
+ pass('Browser empty Jalali date enables day after year/month, accepts leap Esfand 30 and persists exact ISO through PostgreSQL and refresh');
+ await year.selectOption('1404');assert.equal(await day.inputValue(),'');assert.equal(await day.locator('option').count(),30);
+ assert.equal(await page.getByRole('button',{name:'ذخیره و محاسبه',exact:true}).isDisabled(),true);
+ await month.selectOption('07');await day.selectOption('15');await saveDate();
+ assert.equal(await year.inputValue(),'1404');assert.equal(await month.inputValue(),'07');assert.equal(await day.inputValue(),'15');
+ assert.equal((await get('/livelihood/families/'+second.id,leader)).payload.income[0].startedOn,'2025-10-07');
+ pass('Browser existing Jalali date edits year/month/day; non-leap Esfand rejects day 30 and valid correction survives save/refresh');
+ await incomeDate.getByRole('button',{name:'پاک کردن تاریخ',exact:true}).click();await saveDate();
+ assert.equal(await year.inputValue(),'');assert.equal(await month.inputValue(),'');assert.equal(await day.inputValue(),'');assert.equal(await day.isDisabled(),true);
+ assert.equal((await get('/livelihood/families/'+second.id,leader)).payload.income[0].startedOn,'');
+ pass('Browser optional date clears and remains empty after PostgreSQL save and refresh');
+
  await page.getByRole('button',{name:'جمع‌بندی چهار شاخص',exact:true}).click();for(const i of current.model.definition.indicators)await page.getByLabel(i.label,{exact:true}).selectOption(payload.summaries[i.key]);await page.getByLabel('فوریت موضوع معیشت',{exact:true}).selectOption('IMPORTANT');await page.getByLabel('جمع‌بندی نهایی سرگروه',{exact:true}).fill('گردش واقعی از مرورگر — داده فرضی');for(const check of current.checks)await page.getByLabel(check,{exact:true}).check();
  await page.getByRole('button',{name:'ذخیره و محاسبه',exact:true}).click();await page.getByRole('status').filter({hasText:'ثبت شد.'}).waitFor();await page.getByRole('button',{name:'نتیجه و ارسال',exact:true}).click();await page.getByText('۲۰ از ۳۰',{exact:true}).waitFor();await page.getByRole('button',{name:'ارسال برای مدیر اجرایی',exact:true}).click();await page.waitForFunction(()=>!Array.from(document.querySelectorAll('button')).some(x=>x.textContent==='ارسال برای مدیر اجرایی'));await page.screenshot({path:path.join(out,'leader-submitted.png'),fullPage:true});
  pass('Browser fills base data, uploads evidence, completes all livelihood sections, computes 20/30 and submits; incomplete UI submit is disabled');

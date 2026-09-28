@@ -103,3 +103,19 @@
 }
 
 .role-shell .livelihood>*{min-width:0}
+
+/* Compact assessment chrome; contents and workflow remain domain-specific. */
+.role-shell .role-sidebar nav a{font-size:12px;font-weight:400}
+.role-shell :is(.livelihood,.health-workspace){display:grid;gap:12px;min-width:0}
+.role-shell :is(.livelihood,.health-workspace)>*{min-width:0;margin-block:0}
+.role-shell :is(.livelihood,.health-workspace)>.panel{padding:16px}
+.role-shell :is(.livelihood,.health-workspace)>.assessment-header{padding:12px 16px;gap:8px}
+.role-shell .assessment-header .workspace-actions{margin:0;gap:8px;align-items:center}
+.role-shell .assessment-header button{font:inherit;font-size:13px;border:1px solid #744ac3;border-radius:8px;padding:8px 12px;background:#6940b6;color:#fff;cursor:pointer}
+.role-shell .assessment-header button.secondary{background:#fff;color:#583090;border-color:#d8c9ee}
+.role-shell .assessment-header button:disabled{opacity:.5;cursor:not-allowed}
+.role-shell .assessment-history summary{padding-block:4px}
+.role-shell .health-workspace h2{margin-block:4px;font-size:1.1rem}
+.role-shell .guide-content:has(.assessment-header) .family-navigation{margin-block:0;padding-block:6px}
+.role-shell .home-layout:has(.assessment-header)>.workspace-navigation{padding-block:8px;background:transparent}
+.role-shell .assessment-header a{font-size:13px}
