@@ -1,3 +1,4 @@
+import {DocumentsService} from '../src/documents/documents.service';
 /** Synthetic development fixtures only. Never reset a review or impersonate a real decision. */
 import 'reflect-metadata';
 import {Pool, PoolClient} from 'pg';
@@ -36,7 +37,7 @@ function scenario(g:number,n:number) {
 async function main() {
   if(process.env.APP_ENV!=='development')throw new Error('Development-only seed; APP_ENV must be development');
   const pool=new Pool({connectionString:process.env.DATABASE_URL}), c=await pool.connect();
-  const service=new LivelihoodService(pool,new GuidanceService(pool));
+  const service=new LivelihoodService(pool,new GuidanceService(pool),new DocumentsService(pool,new GuidanceService(pool)));
   let created=0, skipped=0, returnIndex=0;
   try {
     await c.query('BEGIN');

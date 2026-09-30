@@ -5,3 +5,4 @@ allowBuilds:
   argon2: true
   esbuild: true
   '@nestjs/core': false
+  sharp: false

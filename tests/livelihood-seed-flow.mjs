@@ -54,7 +54,8 @@ try {
  run('.tools/scripts/migrate.js');run('.tools/scripts/seed-dev.js');run('.tools/scripts/seed-guide-dev.js');run('.tools/scripts/seed-livelihood-dev.js');
  const {LivelihoodService}=require('./.tools/src/livelihood/livelihood.service.js');
  const {GuidanceService}=require('./.tools/src/guidance/guidance.service.js');
- const engine=new LivelihoodService(pool,new GuidanceService(pool));
+ const {DocumentsService}=require('./.tools/src/documents/documents.service.js');
+ const engine=new LivelihoodService(pool,new GuidanceService(pool),new DocumentsService(pool,new GuidanceService(pool)));
  const seed='.tools/scripts/seed-livelihood-scenarios-dev.js';
  const digest=async()=>{const tables=['identity.people','identity.accounts','identity.role_assignments','family.families','family.family_memberships','family.documents','family.document_context','assessment.models','assessment.snapshots','assessment.domain_reviews','assessment.domain_submissions','assessment.domain_decisions','guidance.history','admin.audit_events'];const values={};for(const t of tables)values[t]=(await pool.query(`SELECT md5(COALESCE(string_agg(to_jsonb(x)::text,'' ORDER BY to_jsonb(x)::text),'')) hash FROM ${t} x`)).rows[0].hash;return values;};
  const legacy=await pool.query("SELECT to_jsonb(f) value FROM family.families f WHERE family_code NOT LIKE 'HL-TEST-G%' ORDER BY id");

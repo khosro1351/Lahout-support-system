@@ -1,3 +1,5 @@
+import {randomUUID} from 'node:crypto';
+import {DocumentsService} from '../documents/documents.service';
 import {healthFields} from '../health-screening/health.schema';
 import {Inject,Injectable} from '@nestjs/common';
 import {Pool,PoolClient} from 'pg';
@@ -12,7 +14,7 @@ const validDate=(v:any)=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&!Nu
 const text=(v:any,max=2000)=>typeof v==='string'&&v.length<=max?v.trim():'';
 @Injectable()
 export class LivelihoodService {
- constructor(@Inject(PG_POOL) private pool:Pool,private g:GuidanceService){}
+ constructor(@Inject(PG_POOL) private pool:Pool,private g:GuidanceService,private docs:DocumentsService){}
  async access(db:Pool|PoolClient,familyId:string,u:AuthUser,edit=false){
  const f=(await db.query('SELECT f.*,g.name AS group_name FROM family.families f JOIN organization.groups g ON g.id=f.current_group_id WHERE f.id=$1',[id(familyId)])).rows[0];if(!f)throw new AppError(404,'NOT_FOUND','خانواده پیدا نشد.');
  const leader=u.roles.some(r=>r.roleCode==='GROUP_LEADER'&&r.scopeId===f.current_group_id);
@@ -22,7 +24,7 @@ export class LivelihoodService {
  if(edit&&imported?.batch_state==='VOID')throw new AppError(409,'IMPORT_VOID','Batch این پرونده باطل شده و از کار عملیاتی خارج است.');f.imported=imported?{...imported,transferred_at:f.created_at}:null;return f;
  }
  async basics(db:Pool|PoolClient,f:any){const members=(await db.query(`SELECT p.id,p.first_name,p.last_name,p.national_id,p.mobile,to_char(p.birth_date,'YYYY-MM-DD') AS birth_date,m.relationship_code,m.profile_data FROM family.family_memberships m JOIN identity.people p ON p.id=m.person_id WHERE m.family_id=$1 AND m.valid_to IS NULL ORDER BY CASE WHEN m.relationship_code='HEAD' THEN 0 ELSE 1 END,p.created_at,p.id`,[f.id])).rows;
- const documents=(await db.query('SELECT d.id,d.name,d.media_type,c.category FROM family.documents d LEFT JOIN family.document_context c ON c.document_id=d.id WHERE d.family_id=$1 ORDER BY d.id',[f.id])).rows;
+ const documents=await this.docs.list(db,f.id);
  const activeCritical=(await db.query("SELECT subject FROM oversight.alerts WHERE family_id=$1 AND state<>'RESOLVED' AND severity='CRITICAL'",[f.id])).rows.map(a=>a.subject);
  return {activeCritical,family:{id:f.id,version:f.version,code:f.family_code,groupId:f.current_group_id,groupName:f.group_name,neighborhood:f.neighborhood,...f.basic_data,...(f.imported?{formedOn:new Date(f.created_at).toISOString().slice(0,10)}:{}),status:f.status,imported:f.imported??null},members,documents};}
  async model(db:Pool|PoolClient){return (await db.query("SELECT * FROM assessment.models WHERE version='1.00-LIVELIHOOD'")).rows[0];}
@@ -173,8 +175,23 @@ export class LivelihoodService {
  if(Object.keys(b).some(k=>!['version','reason'].includes(k)))throw new AppError(400,'MANUAL_SCORE','مدیر فقط تصمیم ثبت می‌کند؛ امتیاز دستی مجاز نیست.');
  const reason=text(b.reason);if(action==='return'&&!known(reason))throw new AppError(400,'REASON','علت برگشت الزامی است.');const result=this.submissionResult(s.snapshot);if(action==='approve'&&!result.complete)throw new AppError(422,'INCOMPLETE','این ارزیابی هنوز قابل تأیید نیست.',result.missing);
  const decision=action==='approve'?'APPROVED':'RETURNED';const row=(await c.query("INSERT INTO assessment.domain_decisions(submission_id,decision,reason,decided_by,valid_until) VALUES($1,$2,$3,$4,CASE WHEN $2='APPROVED' THEN now()+interval '1 year' ELSE NULL END) RETURNING *",[s.id,decision,reason||null,u.accountId])).rows[0];await c.query('UPDATE assessment.domain_reviews SET state=$2,version=version+1,updated_at=now() WHERE id=$1',[s.review_id,decision]);await this.g.history(c,u,'FAMILY',s.family_id,'LIVELIHOOD_'+decision,null,{submissionId:s.id,decision,validUntil:row.valid_until,approvedAt:row.decided_at},reason);if(decision==='APPROVED')await this.g.history(c,u,'FAMILY',s.family_id,'LIVELIHOOD_SNAPSHOT_VALIDATED',null,{submissionId:s.id,reviewId:s.review_id,decisionId:row.id,approvedAt:row.decided_at,validUntil:row.valid_until});const f=(await c.query('SELECT * FROM family.families WHERE id=$1',[s.family_id])).rows[0];await this.workflowNotify(c,f,s.id,decision);return row;},false);}
- async upload(familyId:string,value:unknown,u:AuthUser){const b:any=input(value);const name=text(b.name,150),category=b.category,media=b.mediaType;if(!name||/[\\/]/.test(name)||!Object.keys(documentKinds).includes(category)||!['application/pdf','image/png','image/jpeg','text/plain'].includes(media)||typeof b.content!=='string'||!/^[A-Za-z0-9+/]*={0,2}$/.test(b.content))throw new AppError(400,'DOCUMENT','عنوان، نوع و فایل معتبر لازم است.');const bytes=Buffer.from(b.content,'base64');if(!bytes.length||bytes.length>256*1024)throw new AppError(400,'SIZE','حداکثر حجم مدرک ۲۵۶ کیلوبایت است.');
- if(media==='application/pdf'&&!bytes.subarray(0,5).equals(Buffer.from('%PDF-'))||media==='image/png'&&bytes.subarray(0,8).toString('hex')!=='89504e470d0a1a0a'||media==='image/jpeg'&&bytes.subarray(0,3).toString('hex')!=='ffd8ff')throw new AppError(400,'TYPE','محتوای فایل با نوع آن سازگار نیست.');
- return this.g.tx(u,async c=>{await this.access(c,familyId,u,true);await this.editableBase(c,familyId);const doc=(await c.query('INSERT INTO family.documents(family_id,name,media_type,content) VALUES($1,$2,$3,$4) RETURNING id,name,media_type',[familyId,name,media,bytes])).rows[0];await c.query('INSERT INTO family.document_context(document_id,category,actor_id) VALUES($1,$2,$3)',[doc.id,category,u.accountId]);await this.g.history(c,u,'FAMILY',familyId,'LIVELIHOOD_DOCUMENT_ADDED',null,{id:doc.id,name,category});return doc;},false);}
- async document(familyId:string,documentId:string,u:AuthUser){await this.access(this.pool,familyId,u);const d=(await this.pool.query('SELECT * FROM family.documents WHERE id=$1 AND family_id=$2',[id(documentId),familyId])).rows[0];if(!d)throw new AppError(404,'DOCUMENT','مدرک پیدا نشد.');return d;}
+
+ async documentManifest(familyId:string,documentId:string,u:AuthUser){await this.access(this.pool,familyId,u);return this.docs.manifest(familyId,documentId);}
+ async documentWrite(familyId:string,value:unknown,u:AuthUser){
+  const b=input(value);if(!Object.keys(documentKinds).includes(String(b.category)))throw new AppError(400,'CATEGORY','نوع مدرک معتبر نیست.');
+  return this.docs.write(familyId,b,u,async c=>{await this.access(c,familyId,u,true);await this.editableBase(c,familyId);});
+ }
+ async documentArchive(familyId:string,documentId:string,value:unknown,u:AuthUser){return this.docs.archive(familyId,documentId,value,u,async c=>{await this.access(c,familyId,u,true);await this.editableBase(c,familyId);});}
+ async referencedDocuments(db:Pool|PoolClient,familyId:string,ids:string[]){return this.docs.list(db,familyId,true,ids);}
+ async documentList(familyId:string,u:AuthUser){await this.access(this.pool,familyId,u);return this.docs.list(this.pool,familyId,true);}
+ async upload(familyId:string,value:unknown,u:AuthUser){const b=input(value);
+  if(typeof b.content!=='string'||Buffer.from(b.content,'base64').length>256*1024)throw new AppError(400,'SIZE','برای فایل بزرگ از بخش افزودن مدرک استفاده کنید.');
+  return this.documentWrite(familyId,{requestId:randomUUID(),name:b.name,category:b.category,files:[{name:b.name,mediaType:b.mediaType,content:b.content}]},u);
+ }
+ async document(familyId:string,documentId:string,u:AuthUser,fileId?:string){
+  await this.access(this.pool,familyId,u);const d=await this.docs.file(familyId,documentId,fileId);
+  await this.g.tx(u,c=>this.g.history(c,u,'FAMILY',familyId,'DOCUMENT_VIEWED',null,{documentId,fileId:fileId??null}),false);
+  return d;
+ }
+
 }

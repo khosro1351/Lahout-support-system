@@ -1,0 +1,1 @@
+export function FamilyIdentity({name,code}:{name?:string|null;code:string}){return <span className="family-identity"><strong>{name||'سرپرست ثبت نشده'}</strong><small><bdi>{code}</bdi></small></span>;}

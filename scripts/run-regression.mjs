@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-const suites = { healthImport: 'tests/health-import-flow.mjs', persianDate: 'tests/persian-date.mjs', healthScreening: 'tests/health-screening-flow.mjs', login: 'tests/login-flow.mjs', access: 'tests/access-requests-flow.mjs', guide: 'tests/guide-workspace-flow.mjs', roles: 'tests/roles-flow.mjs', livelihood: 'tests/livelihood-flow.mjs', livelihoodSeed: 'tests/livelihood-seed-flow.mjs', technicalUi: 'tests/technical-ui-flow.mjs', leaderUi: 'tests/leader-workspace-flow.mjs', livelihoodVertical: 'tests/livelihood-vertical-flow.mjs' };
+const suites = { documents:'tests/documents-flow.mjs', healthImport: 'tests/health-import-flow.mjs', persianDate: 'tests/persian-date.mjs', healthScreening: 'tests/health-screening-flow.mjs', login: 'tests/login-flow.mjs', access: 'tests/access-requests-flow.mjs', guide: 'tests/guide-workspace-flow.mjs', roles: 'tests/roles-flow.mjs', livelihood: 'tests/livelihood-flow.mjs', livelihoodSeed: 'tests/livelihood-seed-flow.mjs', technicalUi: 'tests/technical-ui-flow.mjs', leaderUi: 'tests/leader-workspace-flow.mjs', livelihoodVertical: 'tests/livelihood-vertical-flow.mjs' };
 const selection = process.argv[2] ?? 'all';
 if (selection !== 'all' && !(selection in suites)) throw new Error('Choose login, access, or all');
 const databaseUrl = process.env.TEST_DATABASE_ADMIN_URL || process.env.DATABASE_URL;
@@ -16,7 +16,7 @@ const env = {
 for (const suite of selection === 'all' ? Object.values(suites) : [suites[selection]]) {
   const code = await new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [suite], {
-      cwd: fileURLToPath(new URL('..', import.meta.url)), env, windowsHide: true, stdio: 'inherit',
+      cwd: fileURLToPath(new URL('..', import.meta.url)), env:{...env,UPLOAD_STORAGE_ROOT:fileURLToPath(new URL('../test-results/upload-storage/'+Date.now()+'-'+suite.split('/').pop(),import.meta.url))}, windowsHide: true, stdio: 'inherit',
     });
     child.once('error', reject);
     child.once('exit', code => resolve(code ?? 1));

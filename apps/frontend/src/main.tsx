@@ -11,7 +11,7 @@ import { AuthProvider } from './auth/AuthProvider';
 import App from './App';
 
 const cache = createCache({ key: 'mui-rtl', stylisPlugins: [prefixer, rtlPlugin] });
-const theme = createTheme({ direction: 'rtl', typography: { fontFamily: 'Tahoma, Arial, sans-serif' } });
+const theme = createTheme({ direction: 'rtl', typography: { fontFamily: "'Liana FD', 'Liana', Tahoma, Arial, sans-serif" } });
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 20_000 } } });
 
 document.documentElement.dir = 'rtl';

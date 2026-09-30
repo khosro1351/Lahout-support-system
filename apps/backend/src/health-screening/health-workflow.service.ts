@@ -22,6 +22,8 @@ export class HealthWorkflowService {
    FROM family.family_memberships m LEFT JOIN assessment.health_screenings s ON s.membership_id=m.id LEFT JOIN assessment.health_forms h ON h.membership_id=m.id AND h.active
    LEFT JOIN identity.accounts ca ON ca.id=s.created_by LEFT JOIN identity.people cp ON cp.id=ca.person_id LEFT JOIN identity.accounts ea ON ea.id=s.updated_by LEFT JOIN identity.people ep ON ep.id=ea.person_id
    WHERE m.family_id=$1 AND m.valid_to IS NULL`,[f.id])).rows;
+  const referenced=[...new Set<string>(records.flatMap(x=>x.specialized?.documentIds??[]))].filter(doc=>!base.documents.some(d=>d.id===doc));
+  const documents=referenced.length?[...base.documents,...await this.livelihood.referencedDocuments(c,f.id,referenced)]:base.documents;
   const members=base.members.map(m=>({...m,...records.find(x=>x.person_id===m.id)}));
   const missing:string[]=[];
   if(!members.length)missing.push('اعضای فعال خانواده ثبت نشده‌اند');
@@ -29,7 +31,7 @@ export class HealthWorkflowService {
    if(!['NO','YES'].includes(m.answer))missing.push(name+'؛ غربالگری نیازمند بررسی است');
    if(m.answer==='YES')for(const [key,label] of Object.entries(healthFields))if(!m.specialized?.[key]?.trim())missing.push(name+'؛ '+label);
   }
-  return {...base,members,fields:healthFields,result:{...score,complete:!missing.length,missing},schemaVersion:'HEALTH_CONTENT_V1'};
+  return {...base,documents,members,fields:healthFields,result:{...score,complete:!missing.length,missing},schemaVersion:'HEALTH_CONTENT_V1'};
  }
  async workspace(familyId:string,u:AuthUser){return this.g.tx(u,async c=>{
   const f=await this.access(c,familyId,u),review=await this.current(c,familyId);

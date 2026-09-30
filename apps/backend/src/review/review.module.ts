@@ -1,3 +1,4 @@
+import {DocumentsModule} from '../documents/documents.module';
 import { Body,Controller,Get,Post,Param,Query,Req,Res,UseGuards,HttpCode,Module } from '@nestjs/common';
 import type {FastifyReply} from 'fastify';
 import {SessionGuard,type AuthenticatedRequest} from '../auth/session.guard';
@@ -53,5 +54,5 @@ export class MonitoringController {
  @Get('data/:dataset') data(@Param('dataset') dataset:string,@Query() q:Record<string,string>){return this.s.query(dataset,q);}
  @Post('export') @HttpCode(200) @UseGuards(CsrfGuard) async export(@Body() b:unknown,@Req() r:AuthenticatedRequest,@Res() reply:FastifyReply){const result=await this.s.export(b,r.user);if(result.format==='preview')return reply.send({html:result.html,fields:result.fields,rows:result.rows});return reply.header('Content-Disposition','attachment; filename="lahout-report.'+result.format+'"').type(result.format==='pdf'?'application/pdf':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet').send(result.buffer);}
 }
-@Module({imports:[AuthModule,GuidanceModule],controllers:[ReviewController,VerificationController,CasesController,MonitoringController],providers:[ReviewService,MonitoringService],exports:[ReviewService]})
+@Module({imports:[AuthModule,GuidanceModule,DocumentsModule],controllers:[ReviewController,VerificationController,CasesController,MonitoringController],providers:[ReviewService,MonitoringService],exports:[ReviewService]})
 export class ReviewModule{}
