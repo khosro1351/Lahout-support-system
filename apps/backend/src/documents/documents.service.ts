@@ -18,7 +18,7 @@ export class DocumentsService implements OnModuleInit{
  v.series_id,v.revision,COALESCE(s.archived,false) AS archived,
  COALESCE((SELECT sum(pdf_pages) FROM family.document_files WHERE document_id=d.id),1)::int AS page_count,
  COALESCE((SELECT sum(stored_size) FROM family.document_files WHERE document_id=d.id),octet_length(d.content))::bigint AS stored_size,
- CASE WHEN s.archived THEN 'ARCHIVED' WHEN EXISTS(SELECT 1 FROM assessment.domain_submissions WHERE snapshot->'documents' @> jsonb_build_array(jsonb_build_object('id',d.id))) OR EXISTS(SELECT 1 FROM assessment.health_submissions WHERE snapshot->'documents' @> jsonb_build_array(jsonb_build_object('id',d.id))) THEN 'SUBMITTED' ELSE 'DRAFT' END AS status
+ CASE WHEN s.archived THEN 'ARCHIVED' WHEN EXISTS(SELECT 1 FROM assessment.domain_submissions WHERE snapshot->'documents' @> jsonb_build_array(jsonb_build_object('id',d.id))) OR EXISTS(SELECT 1 FROM assessment.health_submissions WHERE snapshot->'documents' @> jsonb_build_array(jsonb_build_object('id',d.id))) OR EXISTS(SELECT 1 FROM assessment.snapshots WHERE evidence @> jsonb_build_array(jsonb_build_object('id',d.id))) THEN 'SUBMITTED' ELSE 'DRAFT' END AS status
  FROM family.documents d LEFT JOIN family.document_context c ON c.document_id=d.id LEFT JOIN identity.accounts a ON a.id=c.actor_id LEFT JOIN family.document_versions v ON v.document_id=d.id LEFT JOIN family.document_series s ON s.id=v.series_id
  WHERE d.family_id=$1 AND CASE WHEN $3::uuid[] IS NOT NULL THEN d.id=ANY($3) ELSE (v.document_id IS NULL OR (s.current_document_id=d.id AND ($2::boolean OR NOT s.archived))) END ORDER BY c.recorded_at,d.id`,[familyId,includeArchived,selectedIds??null])).rows;}
  async manifest(familyId:string,documentId:string){

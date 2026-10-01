@@ -52,7 +52,7 @@ async function req(route, { body, cookie, csrf, requestOrigin = origin, method =
 }
 try {
  run('.tools/scripts/migrate.js');run('.tools/scripts/migrate.js');run('.tools/scripts/seed-dev.js');run('.tools/scripts/seed-access-dev.js');run('.tools/scripts/seed-guide-dev.js');run('.tools/scripts/seed-guide-dev.js');
- assert.equal((await pool.query('SELECT count(*)::int n FROM core.schema_migrations')).rows[0].n,16);assert.equal((await pool.query('SELECT count(*)::int n FROM family.families')).rows[0].n,9);assert.equal((await pool.query('SELECT count(*)::int n FROM assessment.snapshots')).rows[0].n,9);
+ assert.equal((await pool.query('SELECT count(*)::int n FROM core.schema_migrations')).rows[0].n,17);assert.equal((await pool.query('SELECT count(*)::int n FROM family.families')).rows[0].n,9);assert.equal((await pool.query('SELECT count(*)::int n FROM assessment.snapshots')).rows[0].n,9);
  run('.tools/scripts/seed-family-read-dev.js');run('.tools/scripts/seed-family-read-dev.js');run('.tools/scripts/seed-family-read-dev.js',{APP_ENV:'production'},1);run('.tools/scripts/seed-guide-dev.js',{APP_ENV:'production'},1);pass('Fifteen additive migrations, repeatable Persian development fixtures and nine versioned assessments');
  const backendLog=openSync(path.join(out,'backend.log'),'w');server=spawn(process.execPath,['dist/main.js'],{cwd:backend,env,windowsHide:true,stdio:['ignore',backendLog,backendLog]});await waitReady('http://127.0.0.1:3001/api/v1/auth/me',server);
  async function login(username){const r=await req('/auth/login',{body:{username,password}});assert.equal(r.status,200,JSON.stringify(r.body));return {cookie:r.cookie,csrf:r.body.csrfToken,user:r.body.user};}

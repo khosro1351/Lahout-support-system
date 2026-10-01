@@ -1,3 +1,4 @@
+import {assertLegacyWritable,hasComprehensive} from '../oversight/legacy-assessment';
 import {Injectable} from '@nestjs/common';
 import {PoolClient} from 'pg';
 import {GuidanceService,id,input,str} from '../guidance/guidance.service';
@@ -11,7 +12,7 @@ const score={score:null,max:20,status:'PENDING_RULES'};
 @Injectable()
 export class HealthWorkflowService {
  constructor(private g:GuidanceService,private livelihood:LivelihoodService){}
- private async access(c:PoolClient,familyId:string,u:AuthUser,edit=false){
+ private async access(c:PoolClient,familyId:string,u:AuthUser,edit=false){if(edit)await assertLegacyWritable(c,familyId);
   if(!['GROUP_LEADER','EXECUTIVE_MANAGER','SUPREME_GUIDE'].includes(u.effectiveRole??'')||edit&&u.effectiveRole!=='GROUP_LEADER')throw new AppError(403,'ROLE','این عملیات در اختیار نقش فعال نیست.');
   return this.livelihood.access(c,familyId,u,edit);
  }
@@ -38,7 +39,7 @@ export class HealthWorkflowService {
   const submissions=(await c.query(`SELECT s.*,d.decision,d.reason,d.decided_at,p.first_name||' '||p.last_name AS approver FROM assessment.health_submissions s JOIN assessment.health_reviews r ON r.id=s.review_id LEFT JOIN assessment.health_decisions d ON d.submission_id=s.id LEFT JOIN identity.accounts a ON a.id=d.decided_by LEFT JOIN identity.people p ON p.id=a.person_id WHERE r.family_id=$1 AND ($2::boolean=false OR d.decision='APPROVED') ORDER BY s.submitted_at DESC,s.revision DESC`,[familyId,u.effectiveRole==='SUPREME_GUIDE'])).rows;
   const history=(await c.query("SELECT h.id,h.action,h.reason,h.occurred_at,p.first_name||' '||p.last_name AS actor_name FROM guidance.history h LEFT JOIN identity.accounts a ON a.id=h.actor_id LEFT JOIN identity.people p ON p.id=a.person_id WHERE entity_type='FAMILY' AND entity_id=$1 AND action LIKE 'HEALTH_%' ORDER BY occurred_at DESC,h.id DESC",[familyId])).rows;
   const base=u.effectiveRole==='SUPREME_GUIDE'?{family:{id:f.id,code:f.family_code},members:[],fields:healthFields,documents:[],result:score}:await this.content(c,f);
-  return {...base,review:u.effectiveRole==='SUPREME_GUIDE'?null:review,submissions,history,canEdit:u.effectiveRole==='GROUP_LEADER'&&review?.state!=='SUBMITTED',canDecide:u.effectiveRole==='EXECUTIVE_MANAGER'&&review?.state==='SUBMITTED'};
+  return {...base,review:u.effectiveRole==='SUPREME_GUIDE'?null:review,submissions,history,canEdit:u.effectiveRole==='GROUP_LEADER'&&review?.state!=='SUBMITTED'&&!await hasComprehensive(c,familyId),canDecide:u.effectiveRole==='EXECUTIVE_MANAGER'&&review?.state==='SUBMITTED'};
  },false);}
  async draft(familyId:string,value:unknown,u:AuthUser){const b=input(value);if(Object.keys(b).length)throw new AppError(400,'INVALID','پیش‌نویس از اطلاعات جاری ایجاد می‌شود.');return this.g.tx(u,async c=>{
   await this.access(c,familyId,u,true);const existing=await this.current(c,familyId);if(existing){if(existing.state==='SUBMITTED')throw new AppError(409,'LOCKED','نسخه منتظر تصمیم مدیر اجرایی است.');return existing;}

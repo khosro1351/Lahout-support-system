@@ -174,7 +174,7 @@ try {
  pass('Age is derived live and never editable; clearing birth persists unknown current age without changing legacy age, including a forged API age');
 
  const beforeHealth=await digest();
- const nav=page.getByRole('navigation',{name:'حوزه‌های ارزیابی'});assert.equal(await nav.getByRole('link').count(),3);
+ const nav=page.getByRole('navigation',{name:'حوزه‌های ارزیابی'});assert.equal(await nav.getByRole('link').count(),7);
  await nav.getByRole('link',{name:'سلامت و درمان',exact:true}).click();
  await page.getByRole('heading',{name:'غربالگری سلامت اعضای خانواده',exact:true}).waitFor();
  assert.equal(await page.locator('tbody tr').count(),base.members.length);

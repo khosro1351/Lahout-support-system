@@ -8,6 +8,9 @@ import {GuidanceModule} from '../guidance/guidance.module';
 import {ReviewModule} from '../review/review.module';
 import {OversightService} from './oversight.service';
 import {AssessmentService} from './assessment.service';
+import {ComprehensiveAssessmentService} from './comprehensive-assessment.service';
+import {LivelihoodModule} from '../livelihood/livelihood.module';
+import {DocumentsModule} from '../documents/documents.module';
 @Controller('oversight') @UseGuards(SessionGuard,GuideGuard)
 class OversightController {
  constructor(private s:OversightService,private a:AssessmentService){}
@@ -23,7 +26,13 @@ class OversightController {
 }
 @Controller('shared') @UseGuards(SessionGuard)
 class SharedController {
- constructor(private s:OversightService,private a:AssessmentService){}
+ constructor(private s:OversightService,private a:AssessmentService,private comprehensive:ComprehensiveAssessmentService){}
+ @Get('comprehensive/queue') comprehensiveQueue(@Req() r:AuthenticatedRequest){return this.comprehensive.queue(r.user);}
+ @Get('families/:id/comprehensive') comprehensiveWorkspace(@Param('id') id:string,@Req() r:AuthenticatedRequest){return this.comprehensive.workspace(id,r.user);}
+ @Post('families/:id/comprehensive/preview') @HttpCode(200) @UseGuards(CsrfGuard) comprehensivePreview(@Param('id') id:string,@Body() b:unknown,@Req() r:AuthenticatedRequest){return this.comprehensive.preview(id,b,r.user);}
+ @Post('families/:id/comprehensive/save') @HttpCode(200) @UseGuards(CsrfGuard) comprehensiveSave(@Param('id') id:string,@Body() b:unknown,@Req() r:AuthenticatedRequest){return this.comprehensive.save(id,b,r.user);}
+ @Post('families/:id/comprehensive/submit') @HttpCode(200) @UseGuards(CsrfGuard) comprehensiveSubmit(@Param('id') id:string,@Body() b:unknown,@Req() r:AuthenticatedRequest){return this.comprehensive.submit(id,b,r.user);}
+ @Post('families/:id/comprehensive/decision') @HttpCode(200) @UseGuards(CsrfGuard) comprehensiveDecision(@Param('id') id:string,@Body() b:unknown,@Req() r:AuthenticatedRequest){return this.comprehensive.decide(id,b,r.user);}
  @Get('groups/:id') group(@Param('id') id:string,@Query() q:Record<string,string>,@Req() r:AuthenticatedRequest){return this.s.group(id,q,r.user);}
  @Get('families/:id') family(@Param('id') id:string,@Req() r:AuthenticatedRequest){return this.s.family(id,r.user);}
  @Get('families/:id/assessments') workspace(@Param('id') id:string,@Req() r:AuthenticatedRequest){return this.a.workspace(id,r.user);}
@@ -34,5 +43,5 @@ class SharedController {
  @Post('families/:id/assessments') @HttpCode(200) @UseGuards(CsrfGuard) submit(@Param('id') id:string,@Body() b:unknown,@Req() r:AuthenticatedRequest){return this.a.submit(id,b,r.user);}
  @Post('models/:id/transition') @HttpCode(200) @UseGuards(CsrfGuard) transition(@Param('id') id:string,@Body() b:unknown,@Req() r:AuthenticatedRequest){return this.a.transition(id,b,r.user);}
 }
-@Module({imports:[AuthModule,GuidanceModule,ReviewModule],controllers:[OversightController,SharedController],providers:[OversightService,AssessmentService],exports:[OversightService,AssessmentService]})
+@Module({imports:[AuthModule,GuidanceModule,ReviewModule,LivelihoodModule,DocumentsModule],controllers:[OversightController,SharedController],providers:[OversightService,AssessmentService,ComprehensiveAssessmentService],exports:[OversightService,AssessmentService]})
 export class OversightModule{}

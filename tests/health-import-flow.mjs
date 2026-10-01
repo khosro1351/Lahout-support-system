@@ -239,9 +239,9 @@ try {
  const page=await browserAs(leader),ep=await browserAs(executive);
  await page.goto(origin+'/leader');await page.locator('.leader-workspace').waitFor();assert.equal(await page.locator('table').count(),0);
  await page.getByRole('button',{name:/نیازمند اقدام من.*نمایش در فهرست/}).click();await page.waitForURL('**/leader/families?filter=*');await page.locator('table').waitFor();
- await page.goto(origin+'/workspace/families/'+family.id);const nav=page.getByRole('navigation',{name:'حوزه‌های ارزیابی'});await nav.waitFor();assert.equal(await nav.getByRole('link').count(),3);assert.equal(await nav.locator('[aria-disabled=true]').count(),3);
+ await page.goto(origin+'/workspace/families/'+family.id);const nav=page.getByRole('navigation',{name:'حوزه‌های ارزیابی'});await nav.waitFor();assert.equal(await nav.getByRole('link').count(),7);assert.equal(await nav.locator('[aria-disabled=true]').count(),0);
  assert.equal(await page.getByRole('region',{name:'اطلاعات جاری پرونده',exact:true}).locator('input,select,textarea').count(),0);
- pass('Browser dashboard summary and KPI drilldown; family base read-only with three active and three deferred domains');
+ pass('Browser dashboard summary and KPI drilldown; family base read-only with seven active navigation targets for base data, five domains and final review');
  await nav.getByRole('link',{name:'سلامت و درمان',exact:true}).click();await page.getByRole('heading',{name:'غربالگری سلامت اعضای خانواده',exact:true}).waitFor();
  await page.locator('tbody tr').first().getByRole('button').click();const panel=page.locator('details[data-member="'+member.id+'"]');
  await panel.getByLabel('دسترسی به درمان، دارو و خدمات',{exact:true}).selectOption('__other');await panel.getByLabel('توضیح سایر — دسترسی به درمان، دارو و خدمات',{exact:true}).fill('شرح دسترسی ثبت‌شده در مرورگر');
