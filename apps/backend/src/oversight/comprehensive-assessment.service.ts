@@ -1,3 +1,4 @@
+import {familyAssessmentStatus,currentAssessmentModel,calculateCurrentAssessment,withCurrentFamily,assessmentDate,modelReviewWarning} from './family-assessment-status';
 import {Inject,Injectable} from '@nestjs/common';
 import {Pool,PoolClient} from 'pg';
 import {PG_POOL} from '../database/database.constants';
@@ -10,7 +11,7 @@ import {AppError} from '../common/app-error';
 import {evaluateComprehensive,alertDeadlineHours,assessmentTarget,domainMaximums, type ComprehensiveAnswers} from './comprehensive-scoring';
 import {comprehensiveFields,domainLabels} from './comprehensive-schema';
 
-const asOf=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tehran',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+const asOf=assessmentDate;
 @Injectable()
 export class ComprehensiveAssessmentService {
  constructor(@Inject(PG_POOL) private pool:Pool,private g:GuidanceService,private livelihood:LivelihoodService,private docs:DocumentsService){}
@@ -21,20 +22,10 @@ export class ComprehensiveAssessmentService {
   if(edit&&f.imported&&!f.imported.members_confirmed_at)throw new AppError(409,'MEMBERS','ابتدا تکمیل اعضای خانواده را تأیید کنید.');
   return f;
  }
- private withBase(payload:any,base:any){
-  const residence=base.family.residenceType;
-  if(!residence)return payload;
-  const codes:Record<string,string>={'ملکی':'OWNER','مالک':'OWNER','اجاره‌ای':'RENT','رهنی':'DEPOSIT','سکونت نزد بستگان':'RELATIVES','نزد بستگان/دیگران':'RELATIVES','اسکان موقت':'TEMPORARY','موقت':'TEMPORARY','غیررسمی':'INFORMAL','فاقد محل ثابت':'HOMELESS'};
-  return {...payload,answers:{...payload.answers,housing:{...payload.answers?.housing,residenceType:codes[residence]??'OTHER',...(!codes[residence]?{residenceTypeOther:residence}:{})}}};
- }
- private calculate(payload:any,base:any){
- const result=evaluateComprehensive(this.withBase(payload,base).answers??{},base.members,asOf());
- for(const [category,label] of [['NATIONAL_CARD','تصویر کارت ملی سرپرست'],['FAMILY_BOOK','صفحات شناسنامه خانواده']])if(!base.documents.some((d:any)=>d.category===category&&!d.archived))result.missing.push({domain:'livelihood',section:'documents',field:'documents',reason:label+' لازم است',target:'review-documents'});
- if(result.missing.length){result.complete=false;result.normalizedScore=null;result.needLevel=null;}
- return result;
- }
+ private withBase=withCurrentFamily;
+ private calculate=calculateCurrentAssessment;
  private async versions(db:Pool|PoolClient,familyId:string){
-  return (await db.query(`SELECT s.*,d.decision,d.comments,d.actor_id AS decided_by,d.created_at AS decided_at FROM assessment.snapshots s JOIN assessment.models m ON m.id=s.model_id LEFT JOIN assessment.decisions d ON d.snapshot_id=s.id WHERE s.family_id=$1 AND m.version='2.0' ORDER BY s.revision DESC`,[familyId])).rows;
+  return (await db.query(`SELECT s.*,d.decision,d.comments,d.actor_id AS decided_by,d.created_at AS decided_at FROM assessment.snapshots s JOIN assessment.models m ON m.id=s.model_id LEFT JOIN assessment.decisions d ON d.snapshot_id=s.id WHERE s.family_id=$1 AND m.definition->>'engine'='comprehensive-v2' ORDER BY s.revision DESC`,[familyId])).rows;
  }
  private payload(value:unknown){
   const p=input(value);
@@ -59,12 +50,13 @@ export class ComprehensiveAssessmentService {
  }
  async workspace(familyId:string,u:AuthUser){
   const f=await this.access(this.pool,familyId,u),base=await this.livelihood.basics(this.pool,f),versions=await this.versions(this.pool,familyId);
-  const draft=(await this.pool.query(`SELECT d.* FROM assessment.drafts d JOIN assessment.models m ON m.id=d.model_id WHERE d.family_id=$1 AND d.submitted_snapshot_id IS NULL AND NOT d.legacy_reference AND m.version='2.0'`,[familyId])).rows[0]??null;
-  const latest=versions[0],payload=draft?.payload??(latest&&(!latest.decision||latest.decision==='RETURNED')?{answers:latest.answers,evidence:latest.evidence.map((d:any)=>d.id),notes:latest.result.notes}: {answers:{},evidence:[],notes:''});
-  const legacy=(await this.pool.query(`SELECT d.id,d.payload,d.created_at,m.version AS model_version FROM assessment.drafts d JOIN assessment.models m ON m.id=d.model_id WHERE d.family_id=$1 AND m.version<>'2.0' ORDER BY d.created_at DESC`,[familyId])).rows;
+  const status=await familyAssessmentStatus(this.pool,familyId,base,u);
+  const draft=status.draft;
+  const latest=versions.find(v=>v.model_id===status.modelId),payload=draft?.payload??(latest&&(!latest.decision||latest.decision==='RETURNED')?{answers:latest.answers,evidence:latest.evidence.map((d:any)=>d.id),notes:latest.result.notes}: {answers:{},evidence:[],notes:''});
+  const legacy=(await this.pool.query(`SELECT d.id,d.payload,d.created_at,m.version AS model_version FROM assessment.drafts d JOIN assessment.models m ON m.id=d.model_id WHERE d.family_id=$1 AND m.id<>(SELECT id FROM assessment.models WHERE state='ACTIVE' AND definition->>'engine'='comprehensive-v2') ORDER BY d.created_at DESC`,[familyId])).rows;
   const legacyDomains=(await this.pool.query(`SELECT 'livelihood' AS domain,id,payload FROM assessment.domain_reviews WHERE family_id=$1`,[familyId]).catch(()=>({rows:[]}))).rows;
-  return {...base,fields:comprehensiveFields,labels:domainLabels,maximums:domainMaximums,draft,versions,payload:this.withBase(payload,base),
-   result:this.calculate(payload,base),canEdit:u.effectiveRole==='GROUP_LEADER'&&f.status==='ACTIVE'&&(!latest||!!latest.decision)&&(!f.imported||!!f.imported.members_confirmed_at),
+  return {...base,assessment:status,fields:comprehensiveFields,labels:domainLabels,maximums:domainMaximums,draft,versions,payload:this.withBase(payload,base),
+   result:this.calculate(payload,base),canEdit:u.effectiveRole==='GROUP_LEADER'&&f.status==='ACTIVE'&&!status.pending&&(!f.imported||!!f.imported.members_confirmed_at),
    canReview:u.effectiveRole==='EXECUTIVE_MANAGER',legacy,legacyDomains,
    alerts:(await this.pool.query("SELECT * FROM oversight.alerts WHERE family_id=$1 AND rule_code LIKE 'V2.%' ORDER BY created_at DESC",[familyId])).rows,
    history:(await this.pool.query("SELECT action,occurred_at,reason FROM guidance.history WHERE entity_type='FAMILY' AND entity_id=$1 AND action LIKE 'COMPREHENSIVE_%' ORDER BY occurred_at DESC",[familyId])).rows};
@@ -76,19 +68,24 @@ export class ComprehensiveAssessmentService {
  async save(familyId:string,value:unknown,u:AuthUser){
   const b=input(value);let payload=this.payload(b.payload);
   return this.g.tx(u,async c=>{
+   await c.query("SELECT pg_advisory_xact_lock(hashtext('assessment:model'))");
    const f=await this.access(c,familyId,u,true);await c.query('SELECT id FROM family.families WHERE id=$1 FOR UPDATE',[familyId]);
    const base=await this.livelihood.basics(c,f);payload=this.withBase(payload,base);
-   const versions=await this.versions(c,familyId);if(versions[0]&&!versions[0].decision)throw new AppError(409,'SUBMITTED','نسخه ارسالی فقط پس از بازگشت قابل اصلاح است.');
-   const model=(await c.query("SELECT id FROM assessment.models WHERE version='2.0'")).rows[0];
+   const status=await familyAssessmentStatus(c,familyId,base,u),versions=(await this.versions(c,familyId)).filter(s=>s.model_id===status.modelId);if(status.pending)throw new AppError(409,'SUBMITTED','نسخه ارسالی فقط پس از بازگشت قابل اصلاح است.');
+   const model=await currentAssessmentModel(c);
    let draft=(await c.query('SELECT * FROM assessment.drafts WHERE family_id=$1 AND model_id=$2 AND submitted_snapshot_id IS NULL AND NOT legacy_reference FOR UPDATE',[familyId,model.id])).rows[0];
    if(draft&&draft.version!==b.version)throw new AppError(409,'STALE','پیش‌نویس تغییر کرده؛ صفحه را تازه کنید.');
    if(!draft&&b.version!==null&&b.version!==undefined)throw new AppError(409,'STALE','نسخه پیش‌نویس معتبر نیست.');
    const old=draft;
+   if(b.reviewedDomains!==undefined&&(!Array.isArray(b.reviewedDomains)||b.reviewedDomains.length>5))throw new AppError(400,'DOMAIN','فهرست حوزه‌های بازبینی‌شده معتبر نیست.');
+   const reviewed=Array.isArray(b.reviewedDomains)?b.reviewedDomains:[];
+   if(reviewed.some((v:any)=>typeof v!=='string'||!Object.keys(domainLabels).includes(v)))throw new AppError(400,'DOMAIN','حوزه بازبینی‌شده معتبر نیست.');
    if(!draft){
     const legacy=(await c.query('UPDATE assessment.drafts SET legacy_reference=true WHERE family_id=$1 AND model_id<>$2 AND submitted_snapshot_id IS NULL AND NOT legacy_reference RETURNING id',[familyId,model.id])).rows;
     if(legacy.length)await this.g.history(c,u,'FAMILY',familyId,'COMPREHENSIVE_LEGACY_REFERENCE',null,{drafts:legacy});
     draft=(await c.query('INSERT INTO assessment.drafts(family_id,model_id,created_by,payload,previous_snapshot_id) VALUES($1,$2,$3,$4,$5) RETURNING *',[familyId,model.id,u.accountId,JSON.stringify(payload),versions[0]?.decision==='RETURNED'?versions[0].id:null])).rows[0];
    }else draft=(await c.query('UPDATE assessment.drafts SET payload=$2,version=version+1,updated_at=now() WHERE id=$1 RETURNING *',[draft.id,JSON.stringify(payload)])).rows[0];
+   draft=(await c.query('UPDATE assessment.drafts SET requires_full_review=$2,reviewed_domains=$3 WHERE id=$1 RETURNING *',[draft.id,status.requiresReview,b.reviewedDomains===undefined?draft.reviewed_domains:[...new Set(reviewed)]])).rows[0];
    const result=this.calculate(payload,base);
    const selected=await this.docs.list(c,familyId,true,payload.evidence);
    if(selected.length!==payload.evidence.length)throw new AppError(400,'DOCUMENT','مدرک باید متعلق به همین خانواده باشد.');
@@ -100,10 +97,14 @@ export class ComprehensiveAssessmentService {
  }
  async submit(familyId:string,value:unknown,u:AuthUser){
   const b=input(value);return this.g.tx(u,async c=>{
+   await c.query("SELECT pg_advisory_xact_lock(hashtext('assessment:model'))");
    const f=await this.access(c,familyId,u,true);await c.query('SELECT id FROM family.families WHERE id=$1 FOR UPDATE',[familyId]);
-   const d=(await c.query(`SELECT d.* FROM assessment.drafts d JOIN assessment.models m ON m.id=d.model_id WHERE d.id=$1 AND d.family_id=$2 AND m.version='2.0' FOR UPDATE OF d`,[id(b.draftId),familyId])).rows[0];
+   const d=(await c.query(`SELECT d.* FROM assessment.drafts d JOIN assessment.models m ON m.id=d.model_id WHERE d.id=$1 AND d.family_id=$2 AND m.definition->>'engine'='comprehensive-v2' FOR UPDATE OF d`,[id(b.draftId),familyId])).rows[0];
    if(!d||d.version!==b.version||d.submitted_snapshot_id||d.legacy_reference)throw new AppError(409,'STALE','پیش‌نویس تغییر کرده یا قبلاً ارسال شده است.');
-   const latest=(await this.versions(c,familyId))[0];if(latest&&!latest.decision)throw new AppError(409,'SUBMITTED','یک نسخه منتظر بررسی است.');
+   const model=await currentAssessmentModel(c);
+   if(d.model_id!==model.id)throw new AppError(409,'MODEL_REVIEW_REQUIRED',modelReviewWarning);
+   if(d.requires_full_review&&Object.keys(domainLabels).some(k=>!d.reviewed_domains.includes(k)))throw new AppError(422,'MODEL_REVIEW_REQUIRED',modelReviewWarning);
+   const latest=(await this.versions(c,familyId)).find(s=>s.model_id===model.id);if(latest&&!latest.decision)throw new AppError(409,'SUBMITTED','یک نسخه منتظر بررسی است.');
    const base=await this.livelihood.basics(c,f),p=this.withBase(this.payload(d.payload),base),result=this.calculate(p,base);
    if(!result.complete)throw new AppError(422,'INCOMPLETE','همه موارد مرور نهایی را تکمیل کنید.');
    const evidenceIds=[...new Set([...p.evidence,...base.documents.filter((d:any)=>['NATIONAL_CARD','FAMILY_BOOK'].includes(d.category)&&!d.archived).map((d:any)=>d.id)])];const documents=await this.docs.list(c,familyId,true,evidenceIds);if(documents.length!==evidenceIds.length)throw new AppError(400,'DOCUMENT','مدرک معتبر نیست.');
@@ -120,10 +121,12 @@ export class ComprehensiveAssessmentService {
  }
  async decide(familyId:string,value:unknown,u:AuthUser){
   const b=input(value);return this.g.tx(u,async c=>{
+   await c.query("SELECT pg_advisory_xact_lock(hashtext('assessment:model'))");
    await this.access(c,familyId,u);
    if(u.effectiveRole!=='EXECUTIVE_MANAGER'||!(await recheckContext(c,u)).some(r=>r.roleCode==='EXECUTIVE_MANAGER'&&r.scopeType==='ORGANIZATION'))throw new AppError(403,'ROLE','فقط مدیر اجرایی می‌تواند تصمیم بگیرد.');
    const s=(await this.versions(c,familyId)).find(s=>s.id===id(b.snapshotId));
    if(!s||s.decision)throw new AppError(409,'DECIDED','نسخه قابل تصمیم‌گیری نیست.');
+   if(b.decision==='APPROVED'&&s.model_id!==(await currentAssessmentModel(c)).id)throw new AppError(409,'MODEL_REVIEW_REQUIRED',modelReviewWarning);
    if(!['APPROVED','RETURNED'].includes(String(b.decision)))throw new AppError(400,'DECISION','تصمیم معتبر نیست.');
    const comments=b.decision==='RETURNED'?b.comments:[];
    if(!Array.isArray(comments)||(b.decision==='RETURNED'&&(!comments.length||comments.length>30)))throw new AppError(400,'COMMENTS','حداقل یک توضیح بازگشت لازم است.');
@@ -144,7 +147,7 @@ export class ComprehensiveAssessmentService {
  }
  async queue(u:AuthUser){
   if(!['EXECUTIVE_MANAGER','SUPREME_GUIDE'].includes(u.effectiveRole??''))throw new AppError(403,'ROLE','دسترسی مدیریتی لازم است.');
-  return {items:(await this.pool.query(`SELECT s.id,s.family_id,s.revision,s.created_at,s.score,s.level,f.family_code,f.status FROM assessment.snapshots s JOIN assessment.models m ON m.id=s.model_id JOIN family.families f ON f.id=s.family_id LEFT JOIN assessment.decisions d ON d.snapshot_id=s.id WHERE m.version='2.0' AND d.id IS NULL ORDER BY s.created_at`)).rows};
+  return {items:(await this.pool.query(`SELECT s.id,s.family_id,s.revision,s.created_at,s.score,s.level,f.family_code,f.status FROM assessment.snapshots s JOIN assessment.models m ON m.id=s.model_id JOIN family.families f ON f.id=s.family_id LEFT JOIN assessment.decisions d ON d.snapshot_id=s.id WHERE m.state='ACTIVE' AND m.definition->>'engine'='comprehensive-v2' AND d.id IS NULL ORDER BY s.created_at`)).rows};
  }
  private async syncAlerts(c:PoolClient,f:any,u:AuthUser,flags:any[],draftId:string,snapshotId:string|null,missing:any[]=[]){
   const owner=(await c.query("SELECT account_id FROM identity.role_assignments WHERE role_code='GROUP_LEADER' AND scope_id=$1 AND valid_from<=now() AND (valid_to IS NULL OR valid_to>now()) ORDER BY valid_from DESC LIMIT 1",[f.current_group_id])).rows[0]?.account_id;

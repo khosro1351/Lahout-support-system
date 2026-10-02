@@ -141,7 +141,7 @@ try {
  front=startFront();await waitReady(origin,front);browser=await chromium.launch({headless:true,...(process.env.BROWSER_EXECUTABLE?{executablePath:process.env.BROWSER_EXECUTABLE}:{})});
  const context=await browser.newContext({viewport:{width:1440,height:1000}});await context.addCookies([{name:'lahout_session',value:leader.cookie.split('=')[1],url:origin,httpOnly:true,sameSite:'Strict'}]);
  let page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
- const openDocs=async()=>{await page.goto(origin+'/workspace/livelihood/'+family.id);await page.getByRole('button',{name:'مدارک پایه',exact:true}).click();};
+ const openDocs=async()=>{await page.goto(origin+'/workspace/families/'+family.id);await page.locator('#family-documents summary').click();};
  await openDocs();await page.getByRole('button',{name:'عنوان مدرک',exact:true}).click();await page.getByRole('option',{name:'سایر',exact:false}).click();await page.getByLabel('عنوان سایر مدارک',{exact:true}).fill('Browser three pages');
  await page.getByLabel('بارگذاری مدرک',{exact:true}).setInputFiles([{name:'page1.png',mimeType:'image/png',buffer:large},{name:'page2.png',mimeType:'image/png',buffer:png},{name:'page3.png',mimeType:'image/png',buffer:png}]);
  await page.getByRole('button',{name:'تأیید و ذخیره',exact:true}).click();
@@ -150,7 +150,7 @@ try {
  let uploaded=(await get(base+'/document-list',leader)).find(x=>x.name==='Browser three pages');assert.equal(uploaded.page_count,3);assert.ok(Number(uploaded.original_size)>Number(uploaded.stored_size));
  await page.getByLabel('عنوان سایر مدارک',{exact:true}).fill('Browser second upload');await page.getByLabel('بارگذاری مدرک',{exact:true}).setInputFiles({name:'two.pdf',mimeType:'application/pdf',buffer:Buffer.from(pdfBytes)});
  await page.getByRole('heading',{name:'Browser second upload',exact:true}).waitFor();await card().waitFor();
- await page.reload();await page.getByRole('button',{name:'مدارک پایه',exact:true}).click();await card().waitFor();
+ await page.reload();await page.locator('#family-documents summary').click();await card().waitFor();
  await card().getByRole('button',{name:'مدیریت صفحات',exact:true}).click();await page.getByRole('button',{name:'پایین‌تر',exact:true}).first().click();await page.getByRole('status').filter({hasText:'مدرک روی سامانه ذخیره شد'}).waitFor();
  uploaded=(await get(base+'/document-list',leader)).find(x=>x.name==='Browser three pages');const ordered=await get(base+'/documents/'+uploaded.id+'/manifest',leader);assert.equal(ordered.files[0].original_name,'page2.png');
  await card().getByRole('button',{name:'مشاهده Browser three pages',exact:true}).click();await page.locator('dialog img').waitFor();assert.ok(await page.locator('dialog img').evaluate(i=>i.complete&&i.naturalWidth>0));await page.getByRole('button',{name:'بعدی',exact:true}).click();await page.getByRole('button',{name:'بزرگ‌نمایی',exact:true}).click();await page.getByRole('button',{name:'بستن',exact:true}).click();

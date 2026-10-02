@@ -1,3 +1,4 @@
+import {assertLegacyWritable} from '../oversight/legacy-assessment';
 import {Injectable} from '@nestjs/common';
 import {PoolClient} from 'pg';
 import {GuidanceService,id,input,str} from '../guidance/guidance.service';
@@ -29,7 +30,7 @@ export class HealthScreeningService {
   if(!Number.isInteger(b.version)||Number(b.version)<0)throw new AppError(400,'VERSION','نسخه معتبر نیست.');
   const detail=str(b.sourceDetail,500,b.source!=='OTHER'),notes=str(b.notes,2000,true);
   return this.g.tx(u,async c=>{
-   await this.family(c,familyId,u);
+   await this.family(c,familyId,u);await assertLegacyWritable(c,familyId);
    if((await c.query("SELECT 1 FROM assessment.health_reviews WHERE family_id=$1 AND state='SUBMITTED'",[familyId])).rowCount)throw new AppError(409,'LOCKED','نسخه سلامت منتظر تصمیم مدیر اجرایی است.');
    if((await c.query("SELECT 1 FROM assessment.health_reviews WHERE family_id=$1 AND state='APPROVED' AND NOT EXISTS(SELECT 1 FROM assessment.health_reviews WHERE family_id=$1 AND state IN ('DRAFT','RETURNED'))",[familyId])).rowCount)throw new AppError(409,'DRAFT','برای ویرایش سلامت، ارزیابی جدید را با حفظ نسخه تأییدشده ایجاد کنید.');
    const membership=(await c.query('SELECT id FROM family.family_memberships WHERE family_id=$1 AND person_id=$2 AND valid_to IS NULL FOR UPDATE',[id(familyId),id(memberId)])).rows[0];

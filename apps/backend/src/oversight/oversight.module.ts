@@ -28,6 +28,7 @@ class OversightController {
 class SharedController {
  constructor(private s:OversightService,private a:AssessmentService,private comprehensive:ComprehensiveAssessmentService){}
  @Get('comprehensive/queue') comprehensiveQueue(@Req() r:AuthenticatedRequest){return this.comprehensive.queue(r.user);}
+ @Get('families/:id/assessment-status') async assessmentStatus(@Param('id') id:string,@Req() r:AuthenticatedRequest){return (await this.comprehensive.workspace(id,r.user)).assessment;}
  @Get('families/:id/comprehensive') comprehensiveWorkspace(@Param('id') id:string,@Req() r:AuthenticatedRequest){return this.comprehensive.workspace(id,r.user);}
  @Post('families/:id/comprehensive/preview') @HttpCode(200) @UseGuards(CsrfGuard) comprehensivePreview(@Param('id') id:string,@Body() b:unknown,@Req() r:AuthenticatedRequest){return this.comprehensive.preview(id,b,r.user);}
  @Post('families/:id/comprehensive/save') @HttpCode(200) @UseGuards(CsrfGuard) comprehensiveSave(@Param('id') id:string,@Body() b:unknown,@Req() r:AuthenticatedRequest){return this.comprehensive.save(id,b,r.user);}

@@ -4,6 +4,7 @@ export const roleHomes:Record<string,string>={SUPREME_GUIDE:'/guide',EXECUTIVE_M
 export const displayName=(name:string|undefined)=>name?.includes('راهبر عالی')?'حساب همیار شاهد':name??'کاربر سامانه';
 export function logicalParent(path:string,role:string){
  const home=roleHomes[role]??'/select-role';
+ if(/^\/workspace\/families\/[^/]+\/assessment\/[^/]+$/.test(path))return path.replace(/\/assessment\/[^/]+$/,'');
  if(/^\/executive\/assessments\/[^/]+$/.test(path))return '/executive/assessments';
  if(/^\/workspace\/health\/[^/]+$/.test(path))return role==='EXECUTIVE_MANAGER'?'/executive/health-assessments':'/workspace/health';
  if(path.startsWith('/technical/'))return home;

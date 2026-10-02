@@ -32,6 +32,7 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (!response.ok) {
     throw new ApiError(data?.error?.code ?? 'HTTP_ERROR', data?.error?.message ?? 'خطا در ارتباط با سامانه.', response.status, data?.error?.details);
   }
+  if (!['GET','HEAD','OPTIONS'].includes(method)&&!path.endsWith('/preview')&&!path.startsWith('/auth/')) window.dispatchEvent(new CustomEvent('family-data-changed',{detail:{path}}));
   return data as T;
 }
 
